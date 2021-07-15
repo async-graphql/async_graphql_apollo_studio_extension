@@ -1,0 +1,45 @@
+name: Pull request changelog
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  changelog:
+    name: 'check changelog change'
+
+    steps:
+    - name: Fail if no changelog change when needed
+      uses: actions/github-script@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const labelsWhereChangelogChangeIsRequired = [
+            'Action: patch bump',
+            'Action: minor bump',
+            'Action: major bump',
+          ];
+          const { data: labels } = await github.issues.listLabelsOnIssue({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            per_page: 100,
+          });
+          const matchingLabels = labels
+            .filter(label => labelsWhereChangelogChangeIsRequired.includes(label.name))
+          if (matchingLabels.length === 0) {
+            console.log('::debug ::No label requiring changelog change. Nothing to do')
+            return;
+          }
+          const { data: files } = await github.pulls.listFiles({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.payload.pull_request.number,
+            per_page: 100,
+          });
+          const fileNotDeletedNames = files
+            .filter(file => file.status === 'added' || file.status === 'modified')
+            .map(file => file.filename)
+          if (!fileNotDeletedNames.includes('CHANGELOG.md')) {
+            throw new Error('CHANGELOG.md Unreleased section shoud have line additions when PR is not a no-release')
+          }
