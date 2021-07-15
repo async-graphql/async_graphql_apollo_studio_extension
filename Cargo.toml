@@ -7,3 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+protobuf = { version = "2.18.1", features = ["bytes"] }
+libflate = "1"
+async-graphql = {version = "2.8.6", features = ["tracing"] }
+tracing = "0.1.*"
+tracing-futures = { version = "0.2.5", default-features = false, features = ["tokio", "futures-03", "std"] }
+futures = "0.3.8"                 # An implementation of futures and streams featuring zero allocations, composability, and itera…
+chrono = "0.4.15"
+tokio = { version = "1", features = ["full"] }
