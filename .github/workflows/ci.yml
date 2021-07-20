@@ -3,6 +3,8 @@ name: Continuous integration
 on:
   pull_request:
     types: [push, synchronize]
+  push:
+    branches: [main]
 
 jobs:
   clippy_check:
