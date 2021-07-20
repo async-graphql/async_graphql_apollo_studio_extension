@@ -1,0 +1,44 @@
+name: On publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: 'Create version and deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create deployment
+        id: deployment
+        uses: actions/github-script@v2
+        env:
+          VERSION: ${{ secrets.GITHUB_REF }}
+          REF: ${{ secrets.GITHUB_REF }}
+          NAME: "async-graphql-extension-apollo-tracing"
+          DIRECTORY: "async-graphql-extension-apollo-tracing"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          previews: 'ant-man-preview,flash-preview'
+          script: |
+            const ref = process.env.GITHUB_SHA;
+            const name = process.env.NAME;
+            const version = process.env.GITHUB_REF.match(/refs\/tags\/(.*)/)[1];
+            const directory = process.env.DIRECTORY;
+            const { data: deployment } = await github.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: ref,
+              environment: 'crates.io',
+              auto_merge: false,
+              required_contexts: [],
+              payload: {
+                version,
+                name,
+                directory,
+                ref,
+              },
+              description: `Deploy ${name}@${version} on crates.io`,
+              production_environment: true,
+            });
+
