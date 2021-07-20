@@ -443,6 +443,11 @@ impl Extension for ApolloTracingExtension {
                         })
                         .collect(),
                 ));
+                let json = match serde_json::to_string(&e) {
+                    Ok(content) => content,
+                    Err(e) => serde_json::json!({ "error": format!("{:?}", e) }).to_string(),
+                };
+                &error.set_json(json);
                 node.write()
                     .await
                     .set_error(RepeatedField::from_vec(vec![error]));

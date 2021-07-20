@@ -48,4 +48,3 @@ Incoming.
 * [Async Graphql Crates](https://github.com/async-graphql/async-graphql)
 * [Apollo Tracing](https://github.com/apollographql/apollo-tracing)
 * [Apollo Server](https://github.com/apollographql/apollo-server)
-
