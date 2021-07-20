@@ -1,7 +1,14 @@
 [package]
-name = "async_graphql_apollo_studio_extension"
+name = "async-graphql-extension-apollo-tracing"
 version = "0.1.0"
 authors = ["Anthony Griffon <an.griffon@gmail.com>"]
+description = "An async_graphql extension to send traces & metrics to Apollo Studio"
+readme = "README.md"
+repository = "https://github.com/Miaxos/async_graphql_apollo_studio_extension"
+documentation = "https://github.com/Miaxos/async_graphql_apollo_studio_extension"
+license = "MIT"
+keywords = ["async_graphql", "futures", "async", "graphql", "apollo", "studio"]
+categories = ["network-programming", "asynchronous"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,9 +16,12 @@ edition = "2018"
 [dependencies]
 protobuf = { version = "2.18.1", features = ["bytes"] }
 libflate = "1"
-async-graphql = {version = "2.8.6", features = ["tracing"] }
+async-graphql = {version = "2.9.*", features = ["tracing"] }
 tracing = "0.1.*"
 tracing-futures = { version = "0.2.5", default-features = false, features = ["tokio", "futures-03", "std"] }
-futures = "0.3.8"                 # An implementation of futures and streams featuring zero allocations, composability, and itera…
+futures = "0.3.*"                 # An implementation of futures and streams featuring zero allocations, composability, and itera…
 chrono = "0.4.15"
 tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.11.*", features = ["json"] }
+async-trait = "0.1.*" 
+serde_json = "1.0.*"                     # A JSON serialization file format

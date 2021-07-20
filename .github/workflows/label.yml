@@ -7,7 +7,7 @@ on:
 jobs:
   version-labels:
     name: 'check version label'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
     - name: Check if version label is present
