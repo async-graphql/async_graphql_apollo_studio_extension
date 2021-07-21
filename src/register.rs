@@ -32,7 +32,7 @@ pub fn sha<Q: ObjectType + 'static, M: ObjectType + 'static, S: SubscriptionType
 /// * `variant` - The name of the graph variant to register the schema to. The default value is current.
 /// * `user_version` - An arbitrary string you can set to distinguish data sent by different versions of your edge server. For example, this can be the SHA of the Git commit for your deployed server code. We plan to make this value visible in Apollo Studio.
 /// * `platform` - The infrastructure environment that your edge server is running in (localhost, kubernetes/deployment, aws lambda, google cloud run, google cloud function, AWS ECS, etc.)
-#[instrument(err, skip(schema))]
+#[instrument(err, skip(authorization_token, schema))]
 pub async fn register<
     Q: ObjectType + 'static,
     M: ObjectType + 'static,
