@@ -86,15 +86,15 @@ impl From<HTTPMethod> for Trace_HTTP_Method {
 /// This structure must be registered to the Query Data to add context to the apollo metrics.
 #[derive(Debug, Clone)]
 pub struct ApolloTracingDataExt {
-    userid: Option<String>,
-    client_name: Option<String>,
-    client_version: Option<String>,
-    path: Option<String>,
-    host: Option<String>,
-    method: Option<HTTPMethod>,
-    secure: Option<bool>,
-    protocol: Option<String>,
-    status_code: Option<u32>,
+    pub userid: Option<String>,
+    pub client_name: Option<String>,
+    pub client_version: Option<String>,
+    pub path: Option<String>,
+    pub host: Option<String>,
+    pub method: Option<HTTPMethod>,
+    pub secure: Option<bool>,
+    pub protocol: Option<String>,
+    pub status_code: Option<u32>,
 }
 
 impl Default for ApolloTracingDataExt {
