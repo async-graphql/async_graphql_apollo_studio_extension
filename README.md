@@ -21,6 +21,9 @@ async-graphql-extension-apollo-tracing
 
 async-graphql-extension-apollo-tracing is an open-source extension for the crates [async_graphql](https://github.com/async-graphql/async-graphql). The purpose of this extension is to provide a simple way to create & send your graphql metrics to [Apollo Studio](https://studio.apollographql.com/).
 
+_Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
+
+**🇫🇷 Crafted in Nantes, France.**
 
 ![Apollo Studio with async_graphql](apollo-studio.png?raw=true "Apollo Studio with async_graphql")
 
@@ -41,6 +44,7 @@ Incoming.
 
 * Gzip compression
 * Error traces
+* Automatic Schema export to studio
 
 ## References
 
