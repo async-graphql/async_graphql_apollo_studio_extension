@@ -14,7 +14,7 @@ const RUNTIME_VERSION: &str = "Rust - No runtime version provided yet";
  * Usefull for Apollo Studio
  */
 pub fn sha<Q: ObjectType + 'static, M: ObjectType + 'static, S: SubscriptionType + 'static>(
-    schema: Schema<Q, M, S>,
+    schema: &Schema<Q, M, S>,
 ) -> String {
     let mut hasher = Sha256::new();
     let schema_sdl = schema.sdl();
@@ -39,7 +39,7 @@ pub async fn register<
     S: SubscriptionType + 'static,
 >(
     authorization_token: &str,
-    schema: Schema<Q, M, S>,
+    schema: &Schema<Q, M, S>,
     server_id: &str,
     variant: &str,
     user_version: &str,
