@@ -36,6 +36,7 @@ _Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
 * Additional data to segment your queries by visitors
 * Tracing
 * Schema export to studio
+* Error traces
 
 ## Examples
 
@@ -115,7 +116,7 @@ async fn main() -> anyhow::Result<()> {
 ## Incoming
 
 * Gzip compression
-* Error traces
+* More detailled traces for timing
 
 ## References
 
