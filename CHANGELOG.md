@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Opensource Brevz Apollo Extension
 - Add on-merge workflows
+- Fix on-merge workflows
 
 ## [0.1.0]
 
