@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.2]
+
 ### Fix
 
-- Do not show authorization_token
+-   Do not show authorization_token
 
 ## [0.3.1]
 
@@ -54,7 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.2...HEAD
+
+[0.3.2]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.1...v0.3.2
 
 [0.3.1]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.0...v0.3.1
 
