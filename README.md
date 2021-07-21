@@ -6,7 +6,7 @@ async-graphql-extension-apollo-tracing
   <img src="https://github.com/Miaxos/async_graphql_apollo_studio_extension/actions/workflows/ci.yml/badge.svg" />
   <!-- Crates version -->
   <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">
-    <img src="https://img.shields.io/crates/v/async-graphql.svg?style=flat-square"
+    <img src="https://img.shields.io/crates/v/async-graphql-extension-apollo-tracing.svg?style=flat-square"
     alt="Crates.io version" />
   </a>
   <!-- Downloads -->
