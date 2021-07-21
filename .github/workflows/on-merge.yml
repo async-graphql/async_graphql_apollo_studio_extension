@@ -1,0 +1,114 @@
+name: On merge
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  publish:
+    name: 'create version and deploy'
+    runs-on: self-hosted
+
+    if: >
+      github.event.pull_request.merged == true && (
+        contains(github.event.pull_request.labels.*.name, 'Action: patch bump')
+      || contains(github.event.pull_request.labels.*.name, 'Action: minor bump')
+      || contains(github.event.pull_request.labels.*.name, 'Action: major bump')
+      || contains(github.event.pull_request.labels.*.name, 'Action: beta bump')
+      )
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        ref: main
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: actions/setup-node@v1
+      with:
+        node-verion: '12.x'
+
+    - name: Git config
+      run: |
+        git config user.name "CI Brevz"
+        git config user.email "ci@brevz.io"
+    - name: Extract version label
+      id: extract-version-label
+      uses: actions/github-script@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const versionLabels = {
+            'Action: patch bump': 'patch',
+            'Action: minor bump': 'minor',
+            'Action: major bump': 'major',
+            'Action: beta bump': 'beta',
+          };
+          const versionLabelsNames = Object.keys(versionLabels);
+          const labels = context.payload.pull_request.labels;
+          const versionLabelsPresent = labels
+            .filter(label => versionLabelsNames.includes(label.name))
+          console.log(`::debug ::${versionLabelsPresent.length} matching labels`);
+          if (versionLabelsPresent.length > 1) {
+            throw new Error('Pull request should have only one version label');
+          }
+          if (versionLabelsPresent.length === 1) {
+            const versionBump = versionLabels[versionLabelsPresent[0].name];
+            console.log(`::set-output name=versionBump::${versionBump}`)
+            return;
+          }
+    - name: Bumb classic version
+      if: steps.extract-version-label.outputs.versionBump != 'beta'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        BUMP_TYPE: ${{ steps.extract-version-label.outputs.versionBump }}
+      run: |
+        npm install -g semver
+        OLD_VERSION=$(cat Cargo.toml | grep "version" | head -n 1 | cut -d'"' -f2)
+        NEW_VERSION=$(semver -i $BUMP_TYPE $OLD_VERSION)
+        sed -i '0,/version.*$/s/version = "'"$OLD_VERSION"'"/version = "'"$NEW_VERSION"'"/' Cargo.toml
+        npm add --no-save remark-cli@^6.0.0 @jarrodldavis/remark-changelog-version-bump@^0.1.1
+        ./node_modules/.bin/remark CHANGELOG.md -o --use @jarrodldavis/changelog-version-bump=version:\"$NEW_VERSION\"
+        git add CHANGELOG.md Cargo.toml
+        git commit -m "$NEW_VERSION"
+        git tag "v$NEW_VERSION"
+    - name: Push on main
+      id: push
+      run: |
+        git push
+        git push --tags
+        COMMIT_ID=$(git rev-parse HEAD)
+        echo "::set-output name=ref::$COMMIT_ID"
+        VERSION=$(cat Cargo.toml | grep "version" | head -n 1 | cut -d'"' -f2)
+        echo "::set-output name=version::$VERSION"
+        VERSION=$(cat Cargo.toml | grep "name" | head -n 1 | cut -d'"' -f2)
+        echo "::set-output name=name::$NAME"
+    - name: Extract release changelog
+      id: extract-changelog
+      if: steps.extract-version-label.outputs.versionBump != 'beta'
+      run: |
+        VERSION=$(cat package.json | jq -r '.version')
+        VERSION_PART=$(sed -n "/## \[$VERSION\]/,/## \[/{/## \[/d;p;}" CHANGELOG.md)
+        VERSION_PART="${VERSION_PART//'%'/'%25'}"
+        VERSION_PART="${VERSION_PART//$'\n'/'%0A'}"
+        VERSION_PART="${VERSION_PART//$'\r'/'%0D'}"
+        echo VERSION_PART=$VERSION_PART
+        echo "::set-output name=version-part::$VERSION_PART"
+    - name: Create Release
+      if: steps.extract-version-label.outputs.versionBump != 'beta'
+      uses: actions/github-script@v2
+      env:
+        VERSION: ${{ steps.push.outputs.version }}
+        BODY: ${{ steps.extract-changelog.outputs.version-part }}
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          await github.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: `v${process.env.VERSION}`,
+            name: process.env.TAG,
+            body: process.env.BODY,
+            draft: false,
+            prerelease: false,
+          })
