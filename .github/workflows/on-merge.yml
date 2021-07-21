@@ -83,6 +83,38 @@ jobs:
         echo "::set-output name=version::$VERSION"
         VERSION=$(cat Cargo.toml | grep "name" | head -n 1 | cut -d'"' -f2)
         echo "::set-output name=name::$NAME"
+    - name: Create deployment
+      id: deployment
+      uses: actions/github-script@v2
+      env:
+        REF: ${{ steps.push.outputs.ref }}
+        VERSION: ${{ steps.push.outputs.VERSION }}
+        NAME: "async-graphql-extension-apollo-tracing"
+        VERSION_BUMP: ${{ steps.extract-version-labels.outputs.versionBump }}
+      with:
+        github-token: ${{ secrets.TOKEN_REPO_WRITE }}
+        previews: 'ant-man-preview,flash-preview'
+        script: |
+          const ref = process.env.REF;
+          const name = process.env.NAME;
+          const version = process.env.VERSION;
+          const npmTag = process.env.VERSION_BUMP === 'beta' ? 'beta' : 'latest';
+          const { data: deployment } = await github.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `v${version}`,
+            environment: 'Crates',
+            auto_merge: false,
+            required_contexts: [],
+            payload: {
+              version,
+              name,
+              ref,
+              npmTag,
+            },
+            description: `Deploy ${name}@${version} on crates.io`,
+            production_environment: true,
+          });
     - name: Extract release changelog
       id: extract-changelog
       if: steps.extract-version-label.outputs.versionBump != 'beta'
