@@ -92,7 +92,7 @@ jobs:
         NAME: "async-graphql-extension-apollo-tracing"
         VERSION_BUMP: ${{ steps.extract-version-labels.outputs.versionBump }}
       with:
-        github-token: ${{ secrets.TOKEN_REPO_WRITE }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         previews: 'ant-man-preview,flash-preview'
         script: |
           const ref = process.env.REF;
