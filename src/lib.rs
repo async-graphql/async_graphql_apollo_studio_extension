@@ -1,6 +1,7 @@
 //! # Apollo Studio Extension for Performance Tracing for async_graphql crates
 mod packages;
 mod proto;
+pub mod register;
 
 #[macro_use]
 extern crate tracing;
