@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-extension-apollo-tracing"
-version = "0.1.0-beta.0"
+version = "0.2.0"
 authors = ["Anthony Griffon <an.griffon@gmail.com>"]
 description = "An async_graphql extension to send traces & metrics to Apollo Studio"
 readme = "README.md"
