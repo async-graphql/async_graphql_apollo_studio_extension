@@ -18,6 +18,7 @@ use chrono::{DateTime, Utc};
 use futures::lock::Mutex;
 use protobuf::well_known_types::Timestamp;
 use protobuf::RepeatedField;
+use std::convert::TryFrom;
 
 use async_graphql::extensions::{
     Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextResolve,
@@ -404,7 +405,7 @@ impl Extension for ApolloTracingExtension {
         let field_name = info.path_node.field_name().to_string();
         let parent_type = info.parent_type.to_string();
         let return_type = info.return_type.to_string();
-        let start_time = Utc::now();
+        let start_time = Utc::now() - self.inner.lock().await.start_time;
         let path_node = info.path_node;
 
         let node: Trace_Node = Trace_Node {
@@ -417,7 +418,13 @@ impl Extension for ApolloTracingExtension {
                     Some(Trace_Node_oneof_id::index(index.try_into().unwrap_or(0)))
                 }
             },
-            start_time: start_time.timestamp_nanos().try_into().unwrap(),
+            start_time: match start_time
+                .num_nanoseconds()
+                .and_then(|x| u64::try_from(x).ok())
+            {
+                Some(duration) => duration,
+                None => Utc::now().timestamp_nanos().try_into().unwrap(),
+            },
             parent_type: parent_type.to_string(),
             original_field_name: field_name,
             field_type: return_type,
