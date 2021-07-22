@@ -30,8 +30,8 @@ jobs:
 
     - name: Git config
       run: |
-        git config user.name "CI Brevz"
-        git config user.email "ci@brevz.io"
+        git config user.name "CI async_graphql"
+        git config user.email "ci-not-reply@no-one.com"
     - name: Extract version label
       id: extract-version-label
       uses: actions/github-script@v2
