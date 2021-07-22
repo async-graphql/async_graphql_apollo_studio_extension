@@ -462,7 +462,7 @@ impl Extension for ApolloTracingExtension {
                 Err(e)
             }
         };
-        let end_time = Utc::now() - self.inner.lock().await.end_time;
+        let end_time = Utc::now() - self.inner.lock().await.start_time;
 
         node.write().await.set_end_time(
             match end_time
