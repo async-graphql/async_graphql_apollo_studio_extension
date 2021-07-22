@@ -1,91 +1,62 @@
-name: Publish
+name: Publish crate
 
 on:
-  deployment
+  workflow_run:
+    workflows: ["On merge"]
+    types:
+      - completed
 
 jobs:
-  crates:
-    name: Deploymeny CI
+  publish:
+    name: Publish
     runs-on: ubuntu-latest
+
     steps:
-      - name: Update deployment status
-        id: status
-        uses: actions/github-script@v2
-        env:
-          DEPLOYMENT_ID: ${{ github.event.deployment.id }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          previews: 'ant-man,flash'
-          script: |
-            const name = context.payload.deployment.payload.name;
-            const version = context.payload.deployment.payload.version;
-            const cratesUrl = `https://crates.io/crates/async-graphql-extension-apollo-tracing/${version}`;
-            const { data: deploymentStatus } = github.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: process.env.DEPLOYMENT_ID,
-              environment_url: cratesUrl,
-              description: `Deployed async-graphql-extension-apollo-tracing@${version} on crates.io`,
-              auto_inactive: false,
-              state: 'in_progress',
-            });
-            const directory = context.payload.deployment.payload.directory;
-            console.log(`::set-output name=directory::${directory}`)
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.deployment.payload.ref }}
+      - uses: actions/checkout@v2
 
-      - name: Git config
+      - name: Compute Version
+        id: compute-version
         run: |
-          git config user.name "Github actions"
-          git config user.email "an.griffon@gmail.com"
-          
-      - name: Install
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+          VERSION=$(cat Cargo.toml | grep "version" | head -n 1 | cut -d'"' -f2)
+          NAME=$(cat Cargo.toml | grep "name" | head -n 1 | cut -d'"' -f2)
+          REF=${{ github.ref }}
+          TAG=${{ github.ref }}-${{ github.sha }}
 
-      - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --all-features --verbose
-      - name: Publish
-        uses: actions-rs/cargo@v1
-        with:
-          command: login
-          args: ${{ secrets.CRATES_IO_API_TOKEN }}
-      - name: Publish
-        id: publish
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-      - name: Update deployment status
-        if: always()
-        uses: actions/github-script@v2
+          echo "::set-output name=version::$VERSION"
+          echo "::set-output name=name::$NAME"
+          echo "::set-output name=ref::$REF"
+          echo "::set-output name=tag::$TAG"
+
+      - name: Create deployment
+        id: deployment
+        uses: actions/github-script@v3
         env:
-          DEPLOYMENT_ID: ${{ github.event.deployment.id }}
-          PUBLISH_STATE: ${{ steps.publish.outputs.state }}
+          NAME: ${{ steps.compute-version.outputs.name }}
+          VERSION: ${{ steps.compute-version.outputs.version }}
+          REF: ${{ steps.compute-version.outputs.ref }}
+          TAG: ${{ steps.compute-version.outputs.tag }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          previews: 'ant-man,flash'
+          previews: 'ant-man-preview,flash-preview'
           script: |
-            const name = context.payload.deployment.payload.name;
-            const version = context.payload.deployment.payload.version;
-            const cratesUrl = `https://crates.io/crates/async-graphql-extension-apollo-tracing/${version}`;
-            const state = 'success';
-            const { data: deploymentStatus } = github.repos.createDeploymentStatus({
+            const name = process.env.NAME;
+            const version = process.env.VERSION;
+            const ref = process.env.REF;
+
+            const { data: deployment } = await github.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              deployment_id: process.env.DEPLOYMENT_ID,
-              environment_url: cratesUrl,
-              description: `Deployed async-graphql-extension-apollo-tracing@${version} on crates.io`,
-              auto_inactive: false,
-              state,
+              ref,
+              environment: 'Crates.io',
+              auto_merge: false,
+              required_contexts: [],
+              description: `Published ${name}@${version} on crates.io`,
+              payload: {
+                name,
+                version,
+                tag: process.env.TAG,
+              },
+              production_environment: true,
             });
+
+            console.log(`::set-output name=id::${deployment.id}`)
