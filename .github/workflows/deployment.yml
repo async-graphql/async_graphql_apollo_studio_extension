@@ -1,0 +1,88 @@
+name: Deployment
+
+on:
+  deployment
+
+jobs:
+  deploy-package:
+    name: Deploy package
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update deployment status
+      uses: actions/github-script@v3
+      env:
+        NAME: ${{ github.event.deployment.payload.name }}
+        VERSION: ${{ github.event.deployment.payload.version }}
+        DEPLOYMENT_ID: ${{ github.event.deployment.id }}
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        previews: 'ant-man,flash'
+        script: |
+          const name = process.env.NAME;
+          const version = process.env.VERSION;
+          const cratesUrl = `https://crates.io/crates/${name}/${version}`;
+
+          const { data: deploymentStatus } = github.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: process.env.DEPLOYMENT_ID,
+            environment_url: cratesUrl,
+            description: `Publishing ${name}@${version} on crates.io`,
+            auto_inactive: false,
+            state: 'in_progress',
+          });
+
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.deployment.payload.ref }}
+
+    - name: Git config
+      run: |
+        git config user.name "Github actions - Async-graphql"
+        git config user.email "ci-not-reply@no-one.com"
+        
+    - name: Install
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Login
+      uses: actions-rs/cargo@v1
+      with:
+        command: login
+        args: ${{ secrets.CRATES_IO_API_TOKEN }}
+
+    - name: Publish
+      id: publish
+      uses: actions-rs/cargo@v1
+      with:
+        command: publish
+
+    - name: Update deployment status
+      uses: actions/github-script@v3
+      env:
+        NAME: ${{ github.event.deployment.payload.name }}
+        VERSION: ${{ github.event.deployment.payload.version }}
+        DEPLOYMENT_ID: ${{ github.event.deployment.id }}
+      with:
+        github-token: ${{ secrets.TOKEN_REPO_WRITE }}
+        previews: 'ant-man,flash'
+        script: |
+          const name = process.env.NAME;
+          const version = process.env.VERSION;
+          const cratesUrl = `https://crates.io/crates/${name}/${version}`;
+
+          const state = 'success';
+
+          const { data: deploymentStatus } = github.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: process.env.DEPLOYMENT_ID,
+            environment_url: cratesUrl,
+            description: `Published ${name}@${version} on crates.io`,
+            auto_inactive: false,
+            state,
+          });

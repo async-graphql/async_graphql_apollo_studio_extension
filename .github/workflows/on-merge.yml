@@ -60,7 +60,6 @@ jobs:
     - name: Bumb classic version
       if: steps.extract-version-label.outputs.versionBump != 'beta'
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         BUMP_TYPE: ${{ steps.extract-version-label.outputs.versionBump }}
       run: |
         npm install -g semver
@@ -119,7 +118,7 @@ jobs:
       id: extract-changelog
       if: steps.extract-version-label.outputs.versionBump != 'beta'
       run: |
-        VERSION=$(cat package.json | jq -r '.version')
+        VERSION=$(cat Cargo.toml | grep "version" | head -n 1 | cut -d'"' -f2)
         VERSION_PART=$(sed -n "/## \[$VERSION\]/,/## \[/{/## \[/d;p;}" CHANGELOG.md)
         VERSION_PART="${VERSION_PART//'%'/'%25'}"
         VERSION_PART="${VERSION_PART//$'\n'/'%0A'}"
