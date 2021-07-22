@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.5]
+
 ### Fix
 
-- Fix tracing timings
+-   Fix tracing timings
 
 ## [0.3.4]
 
@@ -72,7 +75,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.5...HEAD
+
+[0.3.5]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.4...v0.3.5
 
 [0.3.4]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.3...v0.3.4
 
