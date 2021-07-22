@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Misc
 
 -  Update workflows
+-  Update Cargo.toml Repository
 
 ## [0.3.5]
 
