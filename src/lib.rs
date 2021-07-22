@@ -462,11 +462,17 @@ impl Extension for ApolloTracingExtension {
                 Err(e)
             }
         };
-        let end_time = Utc::now();
+        let end_time = Utc::now() - self.inner.lock().await.end_time;
 
-        node.write()
-            .await
-            .set_end_time(end_time.timestamp_nanos().try_into().unwrap());
+        node.write().await.set_end_time(
+            match end_time
+                .num_nanoseconds()
+                .and_then(|x| u64::try_from(x).ok())
+            {
+                Some(duration) => duration,
+                None => Utc::now().timestamp_nanos().try_into().unwrap(),
+            },
+        );
 
         match parent_node {
             None => {
