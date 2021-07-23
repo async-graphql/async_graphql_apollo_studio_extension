@@ -2,7 +2,7 @@ name: Continuous integration
 
 on:
   pull_request:
-    types: [push, synchronize]
+    types: [push, synchronize, opened, reopened]
   push:
     branches: [main]
 
