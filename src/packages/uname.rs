@@ -1,3 +1,4 @@
+use std::fmt::Display;
 // Taken from project uname-rs
 // https://github.com/caverym/uname-rs
 use std::io::{Error, ErrorKind, Result};
@@ -42,7 +43,7 @@ impl Uname {
         let mut raw: utsname = unsafe { std::mem::zeroed() };
 
         if 0 != unsafe { uname(&mut raw) } {
-            returnerr!("failed to put information about the system in uname")?;
+            return returnerr!("failed to put information about the system in uname");
         }
 
         let info: Uname = Uname {
@@ -56,9 +57,12 @@ impl Uname {
 
         Ok(info)
     }
+}
 
-    pub fn to_string(&self) -> String {
-        format!(
+impl Display for Uname {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{sysname} {version} {release} {machine} {nodename}",
             sysname = self.sysname,
             version = self.version,
@@ -75,6 +79,6 @@ fn fromraw(s: &[c_char; 65usize]) -> Result<String> {
     v.retain(|x| *x != 0);
     match String::from_utf8(v) {
         Ok(res) => Ok(res),
-        Err(e) => returnerr!(e.to_string())?,
+        Err(e) => returnerr!(e.to_string()),
     }
 }

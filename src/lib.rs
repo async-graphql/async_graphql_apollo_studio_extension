@@ -124,7 +124,7 @@ impl ApolloTracing {
     /// graph_ref - <ref>@<variant> Graph reference with variant
     /// release_name - Your release version or release name from Git for example
     /// batch_target - The number of traces to batch, it depends on your traffic
-    pub fn new<'a>(
+    pub fn new(
         authorization_token: String,
         hostname: String,
         graph_ref: String,
@@ -135,7 +135,7 @@ impl ApolloTracing {
             uname: Uname::new()
                 .ok()
                 .map(|x| x.to_string())
-                .unwrap_or("No uname provided".to_string()),
+                .unwrap_or_else(|| "No uname provided".to_string()),
             hostname,
             graph_ref,
             service_version: release_name,
@@ -164,13 +164,13 @@ impl ApolloTracing {
                     }
                     None => {
                         let mut trace_and_stats = TracesAndStats::new();
-                        &trace_and_stats.mut_trace().push(trace);
+                        trace_and_stats.mut_trace().push(trace);
 
                         hashmap.insert(name, trace_and_stats);
                     }
                 }
 
-                count = count + 1;
+                count += 1;
 
                 if count > batch_target {
                     use tracing::{field, field::debug, span, Level};
@@ -313,22 +313,28 @@ impl Extension for ApolloTracingExtension {
             .data::<ApolloTracingDataExt>()
             .ok()
             .cloned()
-            .unwrap_or(ApolloTracingDataExt::default());
+            .unwrap_or_else(ApolloTracingDataExt::default);
         let client_name = tracing_extension
             .client_name
-            .unwrap_or("no client name".to_string());
+            .unwrap_or_else(|| "no client name".to_string());
         let client_version = tracing_extension
             .client_version
-            .unwrap_or("no client version".to_string());
-        let userid = tracing_extension.userid.unwrap_or("anonymous".to_string());
+            .unwrap_or_else(|| "no client version".to_string());
+        let userid = tracing_extension
+            .userid
+            .unwrap_or_else(|| "anonymous".to_string());
 
-        let path = tracing_extension.path.unwrap_or("no path".to_string());
-        let host = tracing_extension.host.unwrap_or("no host".to_string());
+        let path = tracing_extension
+            .path
+            .unwrap_or_else(|| "no path".to_string());
+        let host = tracing_extension
+            .host
+            .unwrap_or_else(|| "no host".to_string());
         let method = tracing_extension.method.unwrap_or(HTTPMethod::UNKNOWN);
         let secure = tracing_extension.secure.unwrap_or(false);
         let protocol = tracing_extension
             .protocol
-            .unwrap_or("no protocol".to_string());
+            .unwrap_or_else(|| "no operation".to_string());
         let status_code = tracing_extension.status_code.unwrap_or(0);
 
         let mut trace = Trace {
@@ -342,15 +348,15 @@ impl Extension for ApolloTracingExtension {
             ..Default::default()
         };
 
-        &trace.set_details(Trace_Details {
+        trace.set_details(Trace_Details {
             operation_name: operation_name
                 .map(|x| x.to_string())
-                .unwrap_or("no operation".to_string()),
+                .unwrap_or_else(|| "no operation".to_string()),
             ..Default::default()
         });
 
         // Should come from Context / Headers
-        &trace.set_http(Trace_HTTP {
+        trace.set_http(Trace_HTTP {
             path,
             host,
             method: Trace_HTTP_Method::from(method),
@@ -360,33 +366,32 @@ impl Extension for ApolloTracingExtension {
             ..Default::default()
         });
 
-        &trace.set_end_time(Timestamp {
+        trace.set_end_time(Timestamp {
             nanos: inner.end_time.timestamp_subsec_nanos().try_into().unwrap(),
-            seconds: inner.end_time.timestamp().try_into().unwrap(),
+            seconds: inner.end_time.timestamp(),
             ..Default::default()
         });
 
-        &trace.set_start_time(Timestamp {
+        trace.set_start_time(Timestamp {
             nanos: inner
                 .start_time
                 .timestamp_subsec_nanos()
                 .try_into()
                 .unwrap(),
-            seconds: inner.start_time.timestamp().try_into().unwrap(),
+            seconds: inner.start_time.timestamp(),
             ..Default::default()
         });
 
         let root_node = self.root_node.read().await;
-        &trace.set_root(root_node.clone());
+        trace.set_root(root_node.clone());
 
         let sender = self.sender.clone();
 
         let operation_name = self.operation_name.read().await.clone();
         tokio::spawn(async move {
-            match sender.send((operation_name, trace)).await {
-                Err(e) => error!(error = ?e),
-                _ => {}
-            };
+            if let Err(e) = sender.send((operation_name, trace)).await {
+                error!(error = ?e);
+            }
         });
         resp
     }
@@ -439,8 +444,8 @@ impl Extension for ApolloTracingExtension {
             Ok(res) => Ok(res),
             Err(e) => {
                 let mut error = Trace_Error::new();
-                &error.set_message(e.message.clone());
-                &error.set_location(RepeatedField::from_vec(
+                error.set_message(e.message.clone());
+                error.set_location(RepeatedField::from_vec(
                     e.locations
                         .clone()
                         .into_iter()
@@ -455,7 +460,7 @@ impl Extension for ApolloTracingExtension {
                     Ok(content) => content,
                     Err(e) => serde_json::json!({ "error": format!("{:?}", e) }).to_string(),
                 };
-                &error.set_json(json);
+                error.set_json(json);
                 node.write()
                     .await
                     .set_error(RepeatedField::from_vec(vec![error]));
