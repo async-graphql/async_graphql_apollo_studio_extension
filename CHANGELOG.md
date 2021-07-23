@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6]
+
 ### Misc
 
--  Update workflows
--  Update Cargo.toml Repository
--  Clippy fix
+-   Update workflows
+-   Update Cargo.toml Repository
+-   Clippy fix
 
 ## [0.3.5]
 
@@ -81,7 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.6...HEAD
+
+[0.3.6]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.5...v0.3.6
 
 [0.3.5]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.3.4...v0.3.5
 
