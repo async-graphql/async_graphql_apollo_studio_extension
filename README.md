@@ -35,6 +35,7 @@ _Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
 * Tracing
 * Schema export to studio
 * Error traces
+* Gzip compression
 
 ## Examples
 
@@ -110,11 +111,6 @@ async fn main() -> anyhow::Result<()> {
 
 }
 ```
-
-## Incoming
-
-* Gzip compression
-* More detailled traces for timing
 
 ## References
 
