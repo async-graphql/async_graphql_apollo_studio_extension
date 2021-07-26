@@ -203,13 +203,40 @@ impl ApolloTracing {
                         }
                     };
 
-                    let result = client
-                        .post(REPORTING_URL)
-                        .body(msg)
-                        .header("content-type", "application/protobuf")
-                        .header("X-Api-Key", &authorization_token)
-                        .send()
-                        .await;
+                    let result = if cfg!(features = "compression") {
+                        let mut encoder = libflate::gzip::Encoder::new(Vec::new()).unwrap();
+                        let mut msg = std::io::Cursor::new(msg);
+                        match std::io::copy(&mut msg, &mut encoder) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                error!(target: TARGET_LOG, message = "An issue happened while GZIP compression", err = ?e);
+                                continue;
+                            }
+                        };
+                        match encoder.finish().into_result() {
+                            Ok(msg) => {
+                                client
+                                    .post(REPORTING_URL)
+                                    .body(msg)
+                                    .header("content-type", "application/protobuf")
+                                    .header("X-Api-Key", &authorization_token)
+                                    .send()
+                                    .await
+                            }
+                            Err(e) => {
+                                error!(target: TARGET_LOG, message = "An issue happened while GZIP compression", err = ?e);
+                                continue;
+                            }
+                        }
+                    } else {
+                        client
+                            .post(REPORTING_URL)
+                            .body(msg)
+                            .header("content-type", "application/protobuf")
+                            .header("X-Api-Key", &authorization_token)
+                            .send()
+                            .await
+                    };
 
                     match result {
                         Ok(data) => {
