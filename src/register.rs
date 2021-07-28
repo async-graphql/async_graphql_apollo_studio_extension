@@ -1,4 +1,7 @@
-//! # Apollo Studio Extension for Registering Schema
+//! # Apollo Schema reporting
+//!
+//! Implementation of the apollo Schema Reporting Protocol
+//! <https://www.apollographql.com/docs/studio/schema/schema-reporting/>
 use async_graphql::{ObjectType, Schema, SubscriptionType};
 use reqwest::Client;
 use sha2::{Digest, Sha256};
