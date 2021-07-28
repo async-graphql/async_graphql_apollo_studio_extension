@@ -37,6 +37,12 @@ _Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
 * Error traces
 * Gzip compression
 
+## Crate features
+
+This crate offers the following features, all of which are not activated by default:
+
+- `compression`: Enable the GZIP Compression when sending traces.
+
 ## Examples
 
 ### Warp
