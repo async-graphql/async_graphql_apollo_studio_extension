@@ -200,6 +200,16 @@ impl ApolloTracing {
                         }
                     };
 
+                    let mut client = client
+                        .post(REPORTING_URL)
+                        .header("content-type", "application/protobuf")
+                        .header("accept", "application/json")
+                        .header("X-Api-Key", &authorization_token);
+
+                    if cfg!(feature = "compression") {
+                        client = client.header("content-encoding", "gzip");
+                    };
+
                     let msg = match compression::compress(msg) {
                         Ok(result) => result,
                         Err(e) => {
@@ -208,15 +218,7 @@ impl ApolloTracing {
                         }
                     };
 
-                    let result = client
-                        .post(REPORTING_URL)
-                        .body(msg)
-                        .header("content-type", "application/protobuf")
-                        .header("content-encoding", "gzip")
-                        .header("accept", "application/json")
-                        .header("X-Api-Key", &authorization_token)
-                        .send()
-                        .await;
+                    let result = client.body(msg).send().await;
 
                     match result {
                         Ok(data) => {
