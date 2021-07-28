@@ -212,6 +212,8 @@ impl ApolloTracing {
                         .post(REPORTING_URL)
                         .body(msg)
                         .header("content-type", "application/protobuf")
+                        .header("content-encoding", "gzip")
+                        .header("accept", "application/json")
                         .header("X-Api-Key", &authorization_token)
                         .send()
                         .await;
