@@ -9,6 +9,11 @@ async-graphql-extension-apollo-tracing
     <img src="https://img.shields.io/crates/v/async-graphql-extension-apollo-tracing.svg?style=flat-square"
     alt="Crates.io version" />
   </a>
+  <!-- Documentation -->
+  <a href="https://docs.rs/async-graphql-extension-apollo-tracing/badge.svg">
+    <img src="https://docs.rs/async-graphql-extension-apollo-tracing/badge.svg?style=flat-square"
+      alt="Documentation" />
+  </a>
   <!-- Downloads -->
   <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">
     <img src="https://img.shields.io/crates/d/async-graphql-extension-apollo-tracing.svg?style=flat-square"
