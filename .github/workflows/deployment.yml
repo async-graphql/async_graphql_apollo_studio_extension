@@ -16,7 +16,7 @@ jobs:
         VERSION: ${{ github.event.deployment.payload.version }}
         DEPLOYMENT_ID: ${{ github.event.deployment.id }}
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.DEPLOY_TOKEN }}
         previews: 'ant-man,flash'
         script: |
           const name = process.env.NAME;
