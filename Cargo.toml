@@ -24,12 +24,14 @@ tracing-futures = { version = "0.2.5", default-features = false, features = ["to
 futures = "0.3.*"                 # An implementation of futures and streams featuring zero allocations, composability, and itera…
 chrono = "0.4.15"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.11.*", features = ["json"] }
 async-trait = "0.1.*" 
 serde_json = "1.0.*"                     # A JSON serialization file format
 sha2 = "0.9.*"                # Pure Rust implementation of the SHA-2 hash function family including SHA-224, SHA-256, SHA-384, a…
 anyhow = "1.0.*"                # Flexible concrete Error type built on std::error::Error
 uuid = { version = "0.8.*", features = ["v4"] }                  # A library to generate and parse UUIDs.
+http = "0.2.4"                     # A set of types for representing HTTP requests and responses. 
+bytes = "1.0.1"                            # Types and traits for working with bytes
+thiserror = "1.0.26"          # derive(Error)
 
 # Non-feature optional dependencies
 libflate = { version = "1", optional = true }
