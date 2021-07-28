@@ -97,7 +97,7 @@ jobs:
           const ref = process.env.REF;
           const name = process.env.NAME;
           const version = process.env.VERSION;
-          const npmTag = process.env.VERSION_BUMP === 'beta' ? 'beta' : 'latest';
+          const tag = process.env.VERSION_BUMP === 'beta' ? 'beta' : 'latest';
           const { data: deployment } = await github.repos.createDeployment({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -109,7 +109,7 @@ jobs:
               version,
               name,
               ref,
-              npmTag,
+              tag,
             },
             description: `Deploy ${name}@${version} on crates.io`,
             production_environment: true,
