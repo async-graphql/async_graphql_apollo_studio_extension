@@ -1,4 +1,30 @@
-//! # Apollo Studio Extension for Performance Tracing for async_graphql crates
+//! # Apollo Extensions for async_graphql
+//!  <div align="center">
+//!  <!-- CI -->
+//!  <img src="https://github.com/Miaxos/async_graphql_apollo_studio_extension/actions/workflows/ci.yml/badge.svg" />
+//!  <!-- Crates version -->
+//!  <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">
+//!    <img src="https://img.shields.io/crates/v/async-graphql-extension-apollo-tracing.svg?style=flat-square"
+//!    alt="Crates.io version" />
+//!  </a>
+//!  <!-- Downloads -->
+//!  <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">
+//!    <img src="https://img.shields.io/crates/d/async-graphql-extension-apollo-tracing.svg?style=flat-square"
+//!      alt="Download" />
+//!  </a>
+//! </div>
+//!
+//! ## Features
+//!
+//! * Fully support traces & errors
+//! * Batched traces transfer
+//! * Client segmentation
+//! * Tracing
+//! * Schema register protocol implemented
+//!
+//! ## Crate Features
+//!
+//! * `compression` - To enable GZIP Compression when sending traces to Apollo Studio.
 mod compression;
 mod packages;
 mod proto;
@@ -31,11 +57,13 @@ use std::convert::TryInto;
 use tokio::sync::mpsc::{channel, Sender};
 use tokio::sync::RwLock;
 
-/// Apollo tracing extension for performance tracing
-/// https://www.apollographql.com/docs/studio/setup-analytics/#adding-support-to-a-third-party-server-advanced
+/// Apollo Tracing Extension to send traces to Apollo Studio
+/// The extension to include to your `async_graphql` instance to connect with Apollo Studio.
 ///
-/// Apollo Tracing works by creating Trace from GraphQL calls, which contains extra data about the
-/// request being processed. These traces are then batched sent to the Apollo Studio server.
+/// <https://www.apollographql.com/docs/studio/setup-analytics/#adding-support-to-a-third-party-server-advanced>
+///
+/// Apollo Tracing works by creating traces from GraphQL calls, which contains extra data about the
+/// request being processed. These traces are then batched sent to Apollo Studio.
 ///
 /// The extension will start a separate function on a separate thread which will aggregate traces
 /// and batch send them.
@@ -51,6 +79,7 @@ const TARGET_LOG: &str = "apollo-studio-extension";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const RUNTIME_VERSION: &str = "Rust - No runtime version provided yet";
 
+/// An ENUM describing the various HTTP Methods existing.
 #[derive(Debug, Clone)]
 pub enum HTTPMethod {
     UNKNOWN = 0,
@@ -82,7 +111,30 @@ impl From<HTTPMethod> for Trace_HTTP_Method {
     }
 }
 
-/// This structure must be registered to the Query Data to add context to the apollo metrics.
+/// The structure where you can add additional context for Apollo Studio.
+/// This structure must be added to your query data.
+///
+/// It'll allow you to [segment your
+/// users](https://www.apollographql.com/docs/studio/client-awareness/)
+///
+/// * `userid` - To segment your users, you should fill this field with an internal id describing
+/// your client or event a name. Apollo Studio will be able to aggregate metrics by users.
+/// * `client_name` - You can segment your users by the client they are using to access your
+/// GraphQL API, it's really usefull when you have mobile and web users for instance. Usually we
+/// add a header `apollographql-client-name` to store this data. Apollo Studio will allow you to
+/// aggregate your metrics by Client Name.
+/// * `client_version` - You can segment your users by the client but it's usefull to also have the
+/// version your clients are using, especially when you are serving your API for mobile users,
+/// it'll allow you to follow metrics depending on which version your users are. Usually we add a
+/// header `apollographql-client-version` to store this data.
+/// * `path` - It's the HTTP path to your GraphQL API, it may be usefull for you but generally it's
+/// just `/graphql`.
+/// * `host` - It's the HTTP host to your GraphQL API.
+/// * `method` - The HTTP Method.
+/// * `secure` - If you have SSL.
+/// * `protocol` - The http protocol, example: HTTP/1, HTTP/1.1, HTTP/2.
+/// * `status_code` - The status code return by your GraphQL API. It's a little weird to have to put it
+/// before executing the graphql function, it'll be changed later but usually it's just a 200.
 #[derive(Debug, Clone)]
 pub struct ApolloTracingDataExt {
     pub userid: Option<String>,
@@ -116,11 +168,12 @@ impl ApolloTracing {
     /// We initialize the ApolloTracing Extension by starting our aggregator async function which
     /// will receive every traces and send them to the Apollo Studio Ingress for processing
     ///
-    /// autorization_token - Token to send metrics to apollo studio.
-    /// hostname - Hostname like yourdomain-graphql-1.io
-    /// graph_ref - <ref>@<variant> Graph reference with variant
-    /// release_name - Your release version or release name from Git for example
-    /// batch_target - The number of traces to batch, it depends on your traffic
+    /// * autorization_token - Token to send metrics to apollo studio.
+    /// * hostname - Hostname like yourdomain-graphql-1.io
+    /// * graph_ref - <ref>@<variant> Graph reference with variant
+    /// * release_name - Your release version or release name from Git for example
+    /// * batch_target - The number of traces to batch, it depends on your traffic, if you have
+    /// 60 request per minutes, set it to 20.
     pub fn new(
         authorization_token: String,
         hostname: String,
