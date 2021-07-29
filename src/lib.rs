@@ -25,6 +25,7 @@
 //! ## Crate Features
 //!
 //! * `compression` - To enable GZIP Compression when sending traces to Apollo Studio.
+mod client;
 mod compression;
 mod packages;
 mod proto;
@@ -32,6 +33,8 @@ pub mod register;
 
 #[macro_use]
 extern crate tracing;
+pub use client::{AsyncClient, AsyncClientErrors};
+use http::Request;
 use packages::uname::Uname;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -174,13 +177,17 @@ impl ApolloTracing {
     /// * release_name - Your release version or release name from Git for example
     /// * batch_target - The number of traces to batch, it depends on your traffic, if you have
     /// 60 request per minutes, set it to 20.
-    pub fn new(
+    pub fn new<C>(
         authorization_token: String,
         hostname: String,
         graph_ref: String,
         release_name: String,
         batch_target: usize,
-    ) -> ApolloTracing {
+        client: C,
+    ) -> ApolloTracing
+    where
+        C: AsyncClient + Send + 'static,
+    {
         let header = Arc::new(ReportHeader {
             uname: Uname::new()
                 .ok()
@@ -194,7 +201,6 @@ impl ApolloTracing {
             ..Default::default()
         });
 
-        let client = reqwest::Client::new();
         let (sender, mut receiver) = channel::<(String, Trace)>(batch_target * 3);
 
         let header_tokio = Arc::clone(&header);
@@ -253,14 +259,21 @@ impl ApolloTracing {
                         }
                     };
 
+                    let mut request = Request::post(REPORTING_URL)
+                        .header("content-type", "application/protobuf")
+                        .header("accept", "application/json")
+                        .header("X-Api-Key", &authorization_token);
+                    /*
                     let mut client = client
                         .post(REPORTING_URL)
                         .header("content-type", "application/protobuf")
                         .header("accept", "application/json")
-                        .header("X-Api-Key", &authorization_token);
+                        .header("X-Api-Key", &authorization_token)
+                        .send();
+                        */
 
                     if cfg!(feature = "compression") {
-                        client = client.header("content-encoding", "gzip");
+                        request = request.header("content-encoding", "gzip");
                     };
 
                     let msg = match compression::compress(msg) {
@@ -271,17 +284,25 @@ impl ApolloTracing {
                         }
                     };
 
-                    let result = client.body(msg).send().await;
+                    let request = match request.body(msg) {
+                        Ok(result) => result,
+                        Err(e) => {
+                            error!(target: TARGET_LOG, message = "A critical error happened", err = ?e);
+                            continue;
+                        }
+                    };
+
+                    let result = client.send_endpoint(request);
+                    let result = result.await;
 
                     match result {
                         Ok(data) => {
                             span_batch.record("response", &debug(&data));
-                            let text = data.text().await;
+                            let text: String = String::from_utf8(data.body().to_vec()).unwrap();
                             debug!(target: TARGET_LOG, data = ?text);
                         }
                         Err(err) => {
-                            let status_code = err.status();
-                            error!(target: TARGET_LOG, status = ?status_code, error = ?err);
+                            error!(target: TARGET_LOG, error = ?err);
                         }
                     }
                 }
