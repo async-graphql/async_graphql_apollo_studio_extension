@@ -28,9 +28,21 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Build with all features
-        run: cargo build --all-features
-      - name: Test with all features
-        run: cargo test --all-features
+      - name: Check with tokio-comp
+        run: cargo check --features tokio-comp
+      - name: Check with async-std-comp
+        run: cargo check --features async-std-comp
+      - name: Check with async-std-comp and compression
+        run: cargo check --features async-std-comp,compression
+      - name: Check with tokio-comp and compression
+        run: cargo check --features tokio-comp,compression
+      - name: Test with tokio-comp
+        run: cargo test --features tokio-comp
+      - name: Test with async-std-comp
+        run: cargo test --features async-std-comp
+      - name: Test with async-std-comp and compression
+        run: cargo test --features async-std-comp,compression
+      - name: Test with tokio-comp and compression
+        run: cargo test --features tokio-comp,compression
       - name: Clean
         run: cargo clean
