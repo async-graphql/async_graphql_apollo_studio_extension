@@ -60,6 +60,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: publish
+        args: --features compression,tokio-comp
 
     - name: Update deployment status
       uses: actions/github-script@v3
