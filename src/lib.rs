@@ -29,6 +29,7 @@ mod compression;
 mod packages;
 mod proto;
 pub mod register;
+mod runtime;
 
 #[macro_use]
 extern crate tracing;
@@ -53,9 +54,8 @@ use proto::{
     Report, ReportHeader, Trace, Trace_Details, Trace_Error, Trace_HTTP, Trace_HTTP_Method,
     Trace_Location, Trace_Node, Trace_Node_oneof_id, TracesAndStats,
 };
+use runtime::{channel, Runtime, RwLock, Sender};
 use std::convert::TryInto;
-use tokio::sync::mpsc::{channel, Sender};
-use tokio::sync::RwLock;
 
 /// Apollo Tracing Extension to send traces to Apollo Studio
 /// The extension to include to your `async_graphql` instance to connect with Apollo Studio.
@@ -199,11 +199,16 @@ impl ApolloTracing {
 
         let header_tokio = Arc::clone(&header);
 
-        tokio::spawn(async move {
+        Runtime::locate().spawn(async move {
             let mut hashmap: HashMap<String, TracesAndStats> =
                 HashMap::with_capacity(batch_target + 1);
             let mut count = 0;
-            while let Some((name, trace)) = receiver.recv().await {
+            while let Some((name, trace)) = match Runtime::locate() {
+                #[cfg(feature = "tokio-comp")]
+                Runtime::Tokio => receiver.recv().await,
+                #[cfg(feature = "async-std-comp")]
+                Runtime::AsyncStd => receiver.recv().await.ok(),
+            } {
                 trace!(target: TARGET_LOG, message = "Trace registered", trace = ?trace, name = ?name);
 
                 // We bufferize traces and create a Full Report every X
@@ -450,7 +455,7 @@ impl Extension for ApolloTracingExtension {
         let sender = self.sender.clone();
 
         let operation_name = self.operation_name.read().await.clone();
-        tokio::spawn(async move {
+        Runtime::locate().spawn(async move {
             if let Err(e) = sender.send((operation_name, trace)).await {
                 error!(error = ?e);
             }

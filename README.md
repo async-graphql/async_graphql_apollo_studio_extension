@@ -49,6 +49,8 @@ _Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
 This crate offers the following features, all of which are not activated by default:
 
 - `compression`: Enable the GZIP Compression when sending traces.
+- `tokio-comp`: Enable the Tokio compatibility  when you have a tokio-runtime
+- `async-std-comp`: Enable the async-std compatibility  when you have a async-std-runtime
 
 ## Examples
 
