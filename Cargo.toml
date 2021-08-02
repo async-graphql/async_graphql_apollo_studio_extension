@@ -14,6 +14,8 @@ edition = "2018"
 [features]
 default = []
 compression = ["libflate"]
+tokio-comp = ["tokio"]
+async-std-comp = ["async-std"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
@@ -23,7 +25,6 @@ tracing = "0.1.*"
 tracing-futures = { version = "0.2.5", default-features = false, features = ["tokio", "futures-03", "std"] }
 futures = "0.3.*"                 # An implementation of futures and streams featuring zero allocations, composability, and itera…
 chrono = "0.4.15"
-tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.11.*", features = ["json"] }
 async-trait = "0.1.*" 
 serde_json = "1.0.*"                     # A JSON serialization file format
@@ -33,3 +34,5 @@ uuid = { version = "0.8.*", features = ["v4"] }                  # A library to 
 
 # Non-feature optional dependencies
 libflate = { version = "1", optional = true }
+tokio = { version = "1", features = ["full"], optional = true }
+async-std = { version = "1.9", optional = true }
