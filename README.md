@@ -10,7 +10,7 @@ async-graphql-extension-apollo-tracing
     alt="Crates.io version" />
   </a>
   <!-- Documentation -->
-  <a href="https://docs.rs/async-graphql-extension-apollo-tracing/badge.svg">
+  <a href="https://docs.rs/async-graphql-extension-apollo-tracing/">
     <img src="https://docs.rs/async-graphql-extension-apollo-tracing/badge.svg?style=flat-square"
       alt="Documentation" />
   </a>
@@ -34,7 +34,7 @@ _Tested at Rust version: `rustc 1.53.0 (53cb7b09b 2021-06-17)`_
 
 ## Features
 
-* Tokio 1.0
+* Runtime agnostic (tokio / async-std)
 * Fully support traces & errors
 * Batched Protobuf transfer
 * Client segmentation
