@@ -19,7 +19,7 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --features compression tokio-comp
+          args: --features compression,tokio-comp
   build_and_test:
     name: Build CI
     runs-on: ubuntu-latest
