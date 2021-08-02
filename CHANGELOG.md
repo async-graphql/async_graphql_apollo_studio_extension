@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.1]
+
 ### Fix
 
-- Fix CI publish command, we can't build it with every features, we have to choose the runtime.
+-   Fix CI publish command, we can't build it with every features, we have to choose the runtime.
 
 ## [1.0.0]
 
@@ -115,7 +118,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.1...HEAD
+
+[1.0.1]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.0...v1.0.1
 
 [1.0.0]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v0.4.2...v1.0.0
 
