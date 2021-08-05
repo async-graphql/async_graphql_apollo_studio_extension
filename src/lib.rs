@@ -79,7 +79,7 @@ const REPORTING_URL: &str = "https://usage-reporting.api.apollographql.com/api/i
 const TARGET_LOG: &str = "apollo-studio-extension";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const RUNTIME_VERSION: &str = "Rust - No runtime version provided yet";
-const MAX_TRACES_SIZE: i32 = 3_500_000;
+const MAX_TRACES: usize = 100;
 
 /// An ENUM describing the various HTTP Methods existing.
 #[derive(Debug, Clone)]
@@ -175,8 +175,8 @@ impl ApolloTracing {
     /// * graph_ref - <ref>@<variant> Graph reference with variant
     /// * release_name - Your release version or release name from Git for example
     /// * batch_target - The number of traces to batch, it depends on your traffic, if you have.
-    /// When the accumulated traces are ~4Mb, they are sent event if we did not reach the
-    /// batch_target limit.
+    /// You cannot send batch traces with a size over 4Mb, so we batch every 100 traces even if
+    /// your batch_target is set higher.
     pub fn new(
         authorization_token: String,
         hostname: String,
@@ -206,7 +206,6 @@ impl ApolloTracing {
             let mut hashmap: HashMap<String, TracesAndStats> =
                 HashMap::with_capacity(batch_target + 1);
             let mut count = 0;
-            let mut actual_size: i32 = 0;
             while let Some((name, trace)) = match Runtime::locate() {
                 #[cfg(feature = "tokio-comp")]
                 Runtime::Tokio => receiver.recv().await,
@@ -224,19 +223,15 @@ impl ApolloTracing {
                     None => {
                         let mut trace_and_stats = TracesAndStats::new();
                         trace_and_stats.mut_trace().push(trace);
-
-                        info!(target: "size-ext-2", size = ?size_of_val(&trace_and_stats));
                         hashmap.insert(name, trace_and_stats);
                     }
                 }
 
                 count += 1;
-                actual_size += size_of::<TracesAndStats>() as i32;
 
-                if count > batch_target || actual_size > MAX_TRACES_SIZE  {
+                if count > batch_target || count > MAX_TRACES  {
                     use tracing::{field, field::debug, span, Level};
 
-                    actual_size = 0;
                     let span_batch = span!(
                         Level::DEBUG,
                         "Sending traces by batch to Apollo Studio",
@@ -254,18 +249,6 @@ impl ApolloTracing {
                     let mut report = Report::new();
                     report.set_traces_per_query(hashmap_to_send);
                     report.set_header((*header_tokio).clone());
-
-                    let test = match protobuf::Message::write_to_bytes(&report) {
-                        Ok(message) => {
-                            info!(target: "size-ext-3", size = ?message.len());
-                            info!(target: "size-ext", size = ?size_of_val(&message));
-                        },
-                        Err(err) => {
-                            span_batch.in_scope(|| {
-                                error!(target: TARGET_LOG, error = ?err, report = ?report);
-                            });
-                        }
-                    };
 
                     let msg = match protobuf::Message::write_to_bytes(&report) {
                         Ok(message) => message,
