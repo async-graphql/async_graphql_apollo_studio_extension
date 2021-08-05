@@ -174,8 +174,9 @@ impl ApolloTracing {
     /// * hostname - Hostname like yourdomain-graphql-1.io
     /// * graph_ref - <ref>@<variant> Graph reference with variant
     /// * release_name - Your release version or release name from Git for example
-    /// * batch_target - The number of traces to batch, it depends on your traffic, if you have
-    /// 60 request per minutes, set it to 20.
+    /// * batch_target - The number of traces to batch, it depends on your traffic, if you have.
+    /// When the accumulated traces are ~4Mb, they are sent event if we did not reach the
+    /// batch_target limit.
     pub fn new(
         authorization_token: String,
         hostname: String,
