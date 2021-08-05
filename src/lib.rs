@@ -79,6 +79,7 @@ const REPORTING_URL: &str = "https://usage-reporting.api.apollographql.com/api/i
 const TARGET_LOG: &str = "apollo-studio-extension";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const RUNTIME_VERSION: &str = "Rust - No runtime version provided yet";
+const MAX_TRACES_SIZE: i32 = 3_500_000;
 
 /// An ENUM describing the various HTTP Methods existing.
 #[derive(Debug, Clone)]
@@ -204,6 +205,7 @@ impl ApolloTracing {
             let mut hashmap: HashMap<String, TracesAndStats> =
                 HashMap::with_capacity(batch_target + 1);
             let mut count = 0;
+            let mut actual_size: i32 = 0;
             while let Some((name, trace)) = match Runtime::locate() {
                 #[cfg(feature = "tokio-comp")]
                 Runtime::Tokio => receiver.recv().await,
@@ -211,9 +213,6 @@ impl ApolloTracing {
                 Runtime::AsyncStd => receiver.recv().await.ok(),
             } {
                 trace!(target: TARGET_LOG, message = "Trace registered", trace = ?trace, name = ?name);
-
-                let size = size_of::<TracesAndStats>();
-                info!(target: "size-ext", size = ?size);
 
                 // We bufferize traces and create a Full Report every X
                 // traces
@@ -230,10 +229,12 @@ impl ApolloTracing {
                 }
 
                 count += 1;
+                actual_size += size_of::<TracesAndStats>() as i32;
 
-                if count > batch_target {
+                if count > batch_target || actual_size > MAX_TRACES_SIZE  {
                     use tracing::{field, field::debug, span, Level};
 
+                    actual_size = 0;
                     let span_batch = span!(
                         Level::DEBUG,
                         "Sending traces by batch to Apollo Studio",
