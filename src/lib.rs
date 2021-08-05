@@ -257,6 +257,7 @@ impl ApolloTracing {
 
                     let test = match protobuf::Message::write_to_bytes(&report) {
                         Ok(message) => {
+                            info!(target: "size-ext-3", size = ?message.len());
                             info!(target: "size-ext", size = ?size_of_val(&message));
                         },
                         Err(err) => {
