@@ -35,7 +35,7 @@ mod runtime;
 extern crate tracing;
 use packages::uname::Uname;
 use std::collections::HashMap;
-use std::mem::size_of;
+use std::mem::{size_of, size_of_val};
 use std::sync::Arc;
 
 use async_graphql::QueryPathSegment;
@@ -225,6 +225,7 @@ impl ApolloTracing {
                         let mut trace_and_stats = TracesAndStats::new();
                         trace_and_stats.mut_trace().push(trace);
 
+                        info!(target: "size-ext-2", size = ?size_of_val(&trace_and_stats));
                         hashmap.insert(name, trace_and_stats);
                     }
                 }
@@ -253,6 +254,17 @@ impl ApolloTracing {
                     let mut report = Report::new();
                     report.set_traces_per_query(hashmap_to_send);
                     report.set_header((*header_tokio).clone());
+
+                    let test = match protobuf::Message::write_to_bytes(&report) {
+                        Ok(message) => {
+                            info!(target: "size-ext", size = ?size_of_val(&message));
+                        },
+                        Err(err) => {
+                            span_batch.in_scope(|| {
+                                error!(target: TARGET_LOG, error = ?err, report = ?report);
+                            });
+                        }
+                    };
 
                     let msg = match protobuf::Message::write_to_bytes(&report) {
                         Ok(message) => message,
