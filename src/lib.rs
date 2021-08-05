@@ -35,6 +35,7 @@ mod runtime;
 extern crate tracing;
 use packages::uname::Uname;
 use std::collections::HashMap;
+use std::mem::size_of;
 use std::sync::Arc;
 
 use async_graphql::QueryPathSegment;
@@ -210,6 +211,9 @@ impl ApolloTracing {
                 Runtime::AsyncStd => receiver.recv().await.ok(),
             } {
                 trace!(target: TARGET_LOG, message = "Trace registered", trace = ?trace, name = ?name);
+
+                let size = size_of::<TracesAndStats>();
+                info!(target: "size-ext", size = ?size);
 
                 // We bufferize traces and create a Full Report every X
                 // traces
