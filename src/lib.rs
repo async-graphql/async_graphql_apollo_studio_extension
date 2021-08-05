@@ -35,7 +35,6 @@ mod runtime;
 extern crate tracing;
 use packages::uname::Uname;
 use std::collections::HashMap;
-use std::mem::{size_of, size_of_val};
 use std::sync::Arc;
 
 use async_graphql::QueryPathSegment;
