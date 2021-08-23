@@ -1,10 +1,8 @@
 name: Audit
 
 on:
-  schedule:
-    - cron: "0 0 * * 1"
-  workflow_dispatch:
-    - inputs: []
+  push:
+    branches: [main]
 
 env:
   RUSTFLAGS: -Dwarnings
