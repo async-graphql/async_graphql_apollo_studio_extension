@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3]
+
 ### Misc
 
-- Commit Cargo.lock ... (idk why it was in the .gitignore)
+-   Commit Cargo.lock ... (idk why it was in the .gitignore)
 
 ## [1.0.2]
 
@@ -128,7 +130,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.3...HEAD
+
+[1.0.3]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.2...v1.0.3
 
 [1.0.2]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.1...v1.0.2
 
