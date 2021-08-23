@@ -3,7 +3,8 @@ name: Audit
 on:
   schedule:
     - cron: @daily
-on: workflow_dispatch
+  workflow_dispatch:
+    inputs: []
 
 env:
   RUSTFLAGS: -Dwarnings
