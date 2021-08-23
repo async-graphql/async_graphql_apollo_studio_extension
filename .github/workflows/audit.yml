@@ -2,7 +2,8 @@ name: Audit
 
 on:
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: @daily
+  workflow_dispatch
 
 env:
   RUSTFLAGS: -Dwarnings
