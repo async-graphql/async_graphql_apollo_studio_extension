@@ -2,7 +2,7 @@ name: Audit
 
 on:
   schedule:
-    - cron: @daily
+    - cron: '@daily'
   workflow_dispatch:
     - inputs: []
 
