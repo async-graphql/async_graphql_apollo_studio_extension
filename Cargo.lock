@@ -76,9 +76,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql"
-version = "2.9.9"
+version = "2.9.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6745cb39edc36e207b5d6e35d6684fd8d7721f071010a7eff31aaeb5684e3da6"
+checksum = "cd01c0db7222d80d1742e1084fdb15d7665c83ab43505862f56890e5d2e130b7"
 dependencies = [
  "async-graphql-derive",
  "async-graphql-parser",
@@ -121,7 +121,7 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-extension-apollo-tracing"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "anyhow",
  "async-graphql",
