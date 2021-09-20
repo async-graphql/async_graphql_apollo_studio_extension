@@ -22,7 +22,7 @@ jobs:
       with:
         submodules: recursive
         ref: main
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.DEPLOY_TOKEN }}
 
     - uses: actions/setup-node@v1
       with:
@@ -36,7 +36,7 @@ jobs:
       id: extract-version-label
       uses: actions/github-script@v2
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.DEPLOY_TOKEN }}
         script: |
           const versionLabels = {
             'Action: patch bump': 'patch',
@@ -132,7 +132,7 @@ jobs:
         VERSION: ${{ steps.push.outputs.version }}
         BODY: ${{ steps.extract-changelog.outputs.version-part }}
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.DEPLOY_TOKEN }}
         script: |
           await github.repos.createRelease({
             owner: context.repo.owner,
