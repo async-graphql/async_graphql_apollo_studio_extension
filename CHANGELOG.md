@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix
+
+-   Bump `async-graphql` to `2.10.*` to fix dependency resolution conflict while using latest async-graphql.
+
 ### Misc
 
 -  Add audit github action
