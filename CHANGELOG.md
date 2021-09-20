@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Misc
 
 -  Add audit github action
+-  Issue with workflow token
 
 ## [1.0.3]
 
