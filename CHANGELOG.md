@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4]
+
 ### Fix
 
 -   Bump `async-graphql` to `2.10.*` to fix dependency resolution conflict while using latest async-graphql.
 
 ### Misc
 
--  Add audit github action
--  Issue with workflow token
+-   Add audit github action
+-   Issue with workflow token
 
 ## [1.0.3]
 
@@ -139,7 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.4...HEAD
+
+[1.0.4]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.3...v1.0.4
 
 [1.0.3]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.2...v1.0.3
 
