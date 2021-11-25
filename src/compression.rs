@@ -1,6 +1,7 @@
 #[cfg(feature = "compression")]
 use libflate::gzip;
 
+#[cfg(feature = "compression")]
 const TARGET_LOG_COMPRESSION: &str = "apollo-studio-extension-compression";
 
 #[cfg(feature = "compression")]

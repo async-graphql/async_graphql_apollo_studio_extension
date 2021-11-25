@@ -69,7 +69,7 @@ pub async fn register<
                     executableSchemaId: "{}"
                     graphVariant: "{}"
                     platform: "{}"
-                    libraryVersion: "{}"
+                    libraryVersion: "async-studio-extension {}"
                     runtimeVersion: "{}"
                     userVersion: "{}"        
                   }}
@@ -92,7 +92,7 @@ pub async fn register<
         sha_from_schema,
         variant,
         platform,
-        format!("async-studio-extension {}", VERSION),
+        VERSION,
         RUNTIME_VERSION,
         user_version
     );

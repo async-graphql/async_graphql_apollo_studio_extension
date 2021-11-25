@@ -136,7 +136,7 @@ impl From<HTTPMethod> for Trace_HTTP_Method {
 /// * `protocol` - The http protocol, example: HTTP/1, HTTP/1.1, HTTP/2.
 /// * `status_code` - The status code return by your GraphQL API. It's a little weird to have to put it
 /// before executing the graphql function, it'll be changed later but usually it's just a 200.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ApolloTracingDataExt {
     pub userid: Option<String>,
     pub client_name: Option<String>,
@@ -147,22 +147,6 @@ pub struct ApolloTracingDataExt {
     pub secure: Option<bool>,
     pub protocol: Option<String>,
     pub status_code: Option<u32>,
-}
-
-impl Default for ApolloTracingDataExt {
-    fn default() -> Self {
-        ApolloTracingDataExt {
-            userid: None,
-            client_name: None,
-            client_version: None,
-            path: None,
-            host: None,
-            method: None,
-            secure: None,
-            protocol: None,
-            status_code: None,
-        }
-    }
 }
 
 impl ApolloTracing {
@@ -197,6 +181,7 @@ impl ApolloTracing {
         });
 
         let client = reqwest::Client::new();
+        #[allow(unused_mut)]
         let (sender, mut receiver) = channel::<(String, Trace)>(batch_target * 3);
 
         let header_tokio = Arc::clone(&header);
@@ -381,7 +366,7 @@ impl Extension for ApolloTracingExtension {
             .data::<ApolloTracingDataExt>()
             .ok()
             .cloned()
-            .unwrap_or_else(ApolloTracingDataExt::default);
+            .unwrap_or_default();
         let client_name = tracing_extension
             .client_name
             .unwrap_or_else(|| "no client name".to_string());
