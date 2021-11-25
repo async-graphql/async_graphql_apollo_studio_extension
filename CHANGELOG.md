@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat
+
+-  Bump `async-graphql` to `3.0.7`
+-  Edition 2021
+
 ## [1.0.4]
 
 ### Fix
