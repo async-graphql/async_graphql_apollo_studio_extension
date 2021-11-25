@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0]
+
 ### Feat
 
--  Bump `async-graphql` to `3.0.7`
--  Edition 2021
+-   Bump `async-graphql` to `3.0.7`
+-   Edition 2021
 
 ## [1.0.4]
 
@@ -146,7 +148,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v2.1.0...HEAD
+
+[2.1.0]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.4...v2.1.0
 
 [1.0.4]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v1.0.3...v1.0.4
 
