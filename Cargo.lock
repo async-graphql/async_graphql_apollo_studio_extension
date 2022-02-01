@@ -123,7 +123,7 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-extension-apollo-tracing"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "anyhow",
  "async-graphql",
@@ -1525,9 +1525,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.25.1"
+version = "2.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23129d50f2c9355ced935fce8a08bd706ee2e7ce2b3b33bf61dace0e379ac63a"
+checksum = "9d613b4fd96c0182e187734b4f8fc5cbc8c940bbf781819f7a52d42dc5922d25"
 dependencies = [
  "bytes 1.0.1",
 ]
