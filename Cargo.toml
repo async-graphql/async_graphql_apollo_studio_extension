@@ -28,7 +28,7 @@ chrono = "0.4.15"
 reqwest = { version = "0.11.*", features = ["json"] }
 async-trait = "0.1.*" 
 serde_json = "1.0.*"                     # A JSON serialization file format
-sha2 = "0.9.*"                # Pure Rust implementation of the SHA-2 hash function family including SHA-224, SHA-256, SHA-384, a…
+sha2 = "0.10.*"                # Pure Rust implementation of the SHA-2 hash function family including SHA-224, SHA-256, SHA-384, a…
 anyhow = "1.0.*"                # Flexible concrete Error type built on std::error::Error
 uuid = { version = "0.8.*", features = ["v4"] }                  # A library to generate and parse UUIDs.
 
