@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1]
+
 ## [3.0.0]
 
 ### Feat
@@ -154,7 +156,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Boot repo
 
-[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v3.0.1...HEAD
+
+[3.0.1]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v3.0.0...v3.0.1
 
 [3.0.0]: https://github.com/Miaxos/async_graphql_apollo_studio_extension/compare/v2.1.0...v3.0.0
 
