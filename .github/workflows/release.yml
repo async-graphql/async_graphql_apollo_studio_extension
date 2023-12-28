@@ -20,6 +20,13 @@ jobs:
           token: ${{ github.token }}
           fetch-depth: 0
 
+      - name: Install protoc (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |-
+            sudo apt-get update
+            sudo apt-get install -y protobuf-compiler
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
