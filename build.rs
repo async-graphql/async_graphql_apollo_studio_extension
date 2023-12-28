@@ -6,6 +6,10 @@ use std::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Skip building from docs.rs.
+    if std::env::var_os("DOCS_RS").is_some() {
+        return Ok(());
+    }
     // Retrieve a live version of the reports.proto file
     let proto_url = "https://usage-reporting.api.apollographql.com/proto/reports.proto";
     let response = reqwest::blocking::get(proto_url)?;
