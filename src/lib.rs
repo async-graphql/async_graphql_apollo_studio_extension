@@ -29,19 +29,24 @@ mod compression;
 mod packages;
 mod proto;
 pub mod register;
+mod report_aggregator;
+
 mod runtime;
+use futures::SinkExt;
+use prost_types::Timestamp;
+use report_aggregator::ReportAggregator;
+use runtime::spawn;
 
 #[macro_use]
 extern crate tracing;
-use packages::uname::Uname;
+
+use futures_locks::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_graphql::QueryPathSegment;
 use chrono::{DateTime, Utc};
 use futures::lock::Mutex;
-use protobuf::well_known_types::Timestamp;
-use protobuf::RepeatedField;
 use std::convert::TryFrom;
 
 use async_graphql::extensions::{
@@ -50,12 +55,13 @@ use async_graphql::extensions::{
 };
 use async_graphql::parser::types::{ExecutableDocument, OperationType, Selection};
 use async_graphql::{Response, ServerResult, Value, Variables};
-use proto::{
-    Report, ReportHeader, Trace, Trace_Details, Trace_Error, Trace_HTTP, Trace_HTTP_Method,
-    Trace_Location, Trace_Node, Trace_Node_oneof_id, TracesAndStats,
+use proto::report::{
+    trace::{self, node, Node},
+    Trace,
 };
-use runtime::{channel, Runtime, RwLock, Sender};
 use std::convert::TryInto;
+
+pub use proto::report::trace::http::Method;
 
 /// Apollo Tracing Extension to send traces to Apollo Studio
 /// The extension to include to your `async_graphql` instance to connect with Apollo Studio.
@@ -71,45 +77,7 @@ use std::convert::TryInto;
 /// To add additional data to your metrics, you should add a ApolloTracingDataExt to your
 /// query_data when you process a query with async_graphql.
 pub struct ApolloTracing {
-    sender: Arc<Sender<(String, Trace)>>,
-}
-
-const REPORTING_URL: &str = "https://usage-reporting.api.apollographql.com/api/ingress/traces";
-const TARGET_LOG: &str = "apollo-studio-extension";
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const RUNTIME_VERSION: &str = "Rust - No runtime version provided yet";
-const MAX_TRACES: usize = 100;
-
-/// An ENUM describing the various HTTP Methods existing.
-#[derive(Debug, Clone)]
-pub enum HTTPMethod {
-    UNKNOWN = 0,
-    OPTIONS = 1,
-    GET = 2,
-    HEAD = 3,
-    POST = 4,
-    PUT = 5,
-    DELETE = 6,
-    TRACE = 7,
-    CONNECT = 8,
-    PATCH = 9,
-}
-
-impl From<HTTPMethod> for Trace_HTTP_Method {
-    fn from(value: HTTPMethod) -> Self {
-        match value {
-            HTTPMethod::UNKNOWN => Trace_HTTP_Method::UNKNOWN,
-            HTTPMethod::OPTIONS => Trace_HTTP_Method::OPTIONS,
-            HTTPMethod::GET => Trace_HTTP_Method::GET,
-            HTTPMethod::HEAD => Trace_HTTP_Method::HEAD,
-            HTTPMethod::POST => Trace_HTTP_Method::POST,
-            HTTPMethod::PUT => Trace_HTTP_Method::PUT,
-            HTTPMethod::DELETE => Trace_HTTP_Method::DELETE,
-            HTTPMethod::TRACE => Trace_HTTP_Method::TRACE,
-            HTTPMethod::CONNECT => Trace_HTTP_Method::CONNECT,
-            HTTPMethod::PATCH => Trace_HTTP_Method::PATCH,
-        }
-    }
+    report: Arc<ReportAggregator>,
 }
 
 /// The structure where you can add additional context for Apollo Studio.
@@ -118,8 +86,6 @@ impl From<HTTPMethod> for Trace_HTTP_Method {
 /// It'll allow you to [segment your
 /// users](https://www.apollographql.com/docs/studio/client-awareness/)
 ///
-/// * `userid` - To segment your users, you should fill this field with an internal id describing
-/// your client or event a name. Apollo Studio will be able to aggregate metrics by users.
 /// * `client_name` - You can segment your users by the client they are using to access your
 /// GraphQL API, it's really usefull when you have mobile and web users for instance. Usually we
 /// add a header `apollographql-client-name` to store this data. Apollo Studio will allow you to
@@ -128,24 +94,19 @@ impl From<HTTPMethod> for Trace_HTTP_Method {
 /// version your clients are using, especially when you are serving your API for mobile users,
 /// it'll allow you to follow metrics depending on which version your users are. Usually we add a
 /// header `apollographql-client-version` to store this data.
-/// * `path` - It's the HTTP path to your GraphQL API, it may be usefull for you but generally it's
-/// just `/graphql`.
-/// * `host` - It's the HTTP host to your GraphQL API.
 /// * `method` - The HTTP Method.
-/// * `secure` - If you have SSL.
-/// * `protocol` - The http protocol, example: HTTP/1, HTTP/1.1, HTTP/2.
 /// * `status_code` - The status code return by your GraphQL API. It's a little weird to have to put it
 /// before executing the graphql function, it'll be changed later but usually it's just a 200.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, derive_builder::Builder)]
+#[builder(pattern = "owned", setter(into, strip_option))]
 pub struct ApolloTracingDataExt {
-    pub userid: Option<String>,
+    #[builder(default)]
     pub client_name: Option<String>,
+    #[builder(default)]
     pub client_version: Option<String>,
-    pub path: Option<String>,
-    pub host: Option<String>,
-    pub method: Option<HTTPMethod>,
-    pub secure: Option<bool>,
-    pub protocol: Option<String>,
+    #[builder(default)]
+    pub method: Option<Method>,
+    #[builder(default)]
     pub status_code: Option<u32>,
 }
 
@@ -157,130 +118,23 @@ impl ApolloTracing {
     /// * hostname - Hostname like yourdomain-graphql-1.io
     /// * graph_ref - <ref>@<variant> Graph reference with variant
     /// * release_name - Your release version or release name from Git for example
-    /// * batch_target - The number of traces to batch, it depends on your traffic, if you have.
-    /// You cannot send batch traces with a size over 4Mb, so we batch every 100 traces even if
-    /// your batch_target is set higher.
     pub fn new(
         authorization_token: String,
         hostname: String,
-        graph_ref: String,
-        release_name: String,
-        batch_target: usize,
+        graph_id: String,
+        variant: String,
+        service_version: String,
     ) -> ApolloTracing {
-        let header = Arc::new(ReportHeader {
-            uname: Uname::new()
-                .ok()
-                .map(|x| x.to_string())
-                .unwrap_or_else(|| "No uname provided".to_string()),
+        let report = ReportAggregator::initialize(
+            authorization_token,
             hostname,
-            graph_ref,
-            service_version: release_name,
-            agent_version: format!("async-studio-extension {}", VERSION),
-            runtime_version: RUNTIME_VERSION.to_string(),
-            ..Default::default()
-        });
-
-        let client = reqwest::Client::new();
-        #[allow(unused_mut)]
-        let (sender, mut receiver) = channel::<(String, Trace)>(batch_target * 3);
-
-        let header_tokio = Arc::clone(&header);
-
-        Runtime::locate().spawn(async move {
-            let mut hashmap: HashMap<String, TracesAndStats> =
-                HashMap::with_capacity(batch_target + 1);
-            let mut count = 0;
-            while let Some((name, trace)) = match Runtime::locate() {
-                #[cfg(feature = "tokio-comp")]
-                Runtime::Tokio => receiver.recv().await,
-                #[cfg(feature = "async-std-comp")]
-                Runtime::AsyncStd => receiver.recv().await.ok(),
-            } {
-                trace!(target: TARGET_LOG, message = "Trace registered", trace = ?trace, name = ?name);
-
-                // We bufferize traces and create a Full Report every X
-                // traces
-                match hashmap.get_mut(&name) {
-                    Some(previous) => {
-                        previous.mut_trace().push(trace);
-                    }
-                    None => {
-                        let mut trace_and_stats = TracesAndStats::new();
-                        trace_and_stats.mut_trace().push(trace);
-                        hashmap.insert(name, trace_and_stats);
-                    }
-                }
-
-                count += 1;
-
-                if count > batch_target || count > MAX_TRACES  {
-                    use tracing::{field, field::debug, span, Level};
-
-                    let span_batch = span!(
-                        Level::DEBUG,
-                        "Sending traces by batch to Apollo Studio",
-                        response = field::Empty,
-                        batched = ?count,
-                    );
-
-                    span_batch.in_scope(|| {
-                        trace!(target: TARGET_LOG, message = "Sending traces by batch");
-                    });
-
-                    let hashmap_to_send = hashmap;
-                    hashmap = HashMap::with_capacity(batch_target + 1);
-
-                    let mut report = Report::new();
-                    report.set_traces_per_query(hashmap_to_send);
-                    report.set_header((*header_tokio).clone());
-
-                    let msg = match protobuf::Message::write_to_bytes(&report) {
-                        Ok(message) => message,
-                        Err(err) => {
-                            span_batch.in_scope(|| {
-                                error!(target: TARGET_LOG, error = ?err, report = ?report);
-                            });
-                            continue;
-                        }
-                    };
-
-                    let mut client = client
-                        .post(REPORTING_URL)
-                        .header("content-type", "application/protobuf")
-                        .header("accept", "application/json")
-                        .header("X-Api-Key", &authorization_token);
-
-                    if cfg!(feature = "compression") {
-                        client = client.header("content-encoding", "gzip");
-                    };
-
-                    let msg = match compression::compress(msg) {
-                        Ok(result) => result,
-                        Err(e) => {
-                            error!(target: TARGET_LOG, message = "An issue happened while GZIP compression", err = ?e);
-                            continue;
-                        }
-                    };
-
-                    let result = client.body(msg).send().await;
-
-                    match result {
-                        Ok(data) => {
-                            span_batch.record("response", &debug(&data));
-                            let text = data.text().await;
-                            debug!(target: TARGET_LOG, data = ?text);
-                        }
-                        Err(err) => {
-                            let status_code = err.status();
-                            error!(target: TARGET_LOG, status = ?status_code, error = ?err);
-                        }
-                    }
-                }
-            }
-        });
+            graph_id,
+            variant,
+            service_version,
+        );
 
         ApolloTracing {
-            sender: Arc::new(sender),
+            report: Arc::new(report),
         }
     }
 }
@@ -292,9 +146,9 @@ impl ExtensionFactory for ApolloTracing {
                 start_time: Utc::now(),
                 end_time: Utc::now(),
             }),
-            sender: Arc::clone(&self.sender),
+            report: self.report.clone(),
             nodes: RwLock::new(HashMap::new()),
-            root_node: Arc::new(RwLock::new(Trace_Node::new())),
+            root_node: Arc::new(RwLock::new(Node::default())),
             operation_name: RwLock::new("schema".to_string()),
         })
     }
@@ -307,9 +161,9 @@ struct Inner {
 
 struct ApolloTracingExtension {
     inner: Mutex<Inner>,
-    sender: Arc<Sender<(String, Trace)>>,
-    nodes: RwLock<HashMap<String, Arc<RwLock<Trace_Node>>>>,
-    root_node: Arc<RwLock<Trace_Node>>,
+    report: Arc<ReportAggregator>,
+    nodes: RwLock<HashMap<String, Arc<RwLock<Node>>>>,
+    root_node: Arc<RwLock<Node>>,
     operation_name: RwLock<String>,
 }
 
@@ -336,8 +190,7 @@ impl Extension for ApolloTracingExtension {
                 .operations
                 .iter()
                 .next()
-                .map(|x| x.0)
-                .flatten()
+                .and_then(|x| x.0)
                 .map(|x| x.as_str())
                 .unwrap_or("no_name");
             let query_type = format!("# {name}\n {query}", name = name, query = result);
@@ -367,81 +220,61 @@ impl Extension for ApolloTracingExtension {
             .ok()
             .cloned()
             .unwrap_or_default();
+
         let client_name = tracing_extension
             .client_name
             .unwrap_or_else(|| "no client name".to_string());
         let client_version = tracing_extension
             .client_version
             .unwrap_or_else(|| "no client version".to_string());
-        let userid = tracing_extension
-            .userid
-            .unwrap_or_else(|| "anonymous".to_string());
-
-        let path = tracing_extension
-            .path
-            .unwrap_or_else(|| "no path".to_string());
-        let host = tracing_extension
-            .host
-            .unwrap_or_else(|| "no host".to_string());
-        let method = tracing_extension.method.unwrap_or(HTTPMethod::UNKNOWN);
-        let secure = tracing_extension.secure.unwrap_or(false);
-        let protocol = tracing_extension
-            .protocol
-            .unwrap_or_else(|| "no operation".to_string());
+        let method = tracing_extension.method.unwrap_or(Method::Unknown);
         let status_code = tracing_extension.status_code.unwrap_or(0);
 
-        let mut trace = Trace {
+        let mut trace: Trace = Trace {
             client_name,
             client_version,
             duration_ns: (inner.end_time - inner.start_time)
                 .num_nanoseconds()
                 .map(|x| x.try_into().unwrap())
                 .unwrap_or(0),
-            client_reference_id: userid,
             ..Default::default()
         };
 
-        trace.set_details(Trace_Details {
+        trace.details = Some(trace::Details {
             operation_name: operation_name
                 .map(|x| x.to_string())
                 .unwrap_or_else(|| "no operation".to_string()),
             ..Default::default()
         });
 
-        // Should come from Context / Headers
-        trace.set_http(Trace_HTTP {
-            path,
-            host,
-            method: Trace_HTTP_Method::from(method),
-            secure,
-            protocol,
+        trace.http = Some(trace::Http {
+            method: method.into(),
             status_code,
             ..Default::default()
         });
 
-        trace.set_end_time(Timestamp {
+        trace.end_time = Some(Timestamp {
             nanos: inner.end_time.timestamp_subsec_nanos().try_into().unwrap(),
             seconds: inner.end_time.timestamp(),
-            ..Default::default()
         });
 
-        trace.set_start_time(Timestamp {
+        trace.start_time = Some(Timestamp {
             nanos: inner
                 .start_time
                 .timestamp_subsec_nanos()
                 .try_into()
                 .unwrap(),
             seconds: inner.start_time.timestamp(),
-            ..Default::default()
         });
 
         let root_node = self.root_node.read().await;
-        trace.set_root(root_node.clone());
+        trace.root = Some(root_node.clone());
 
-        let sender = self.sender.clone();
+        let mut sender = self.report.sender();
 
         let operation_name = self.operation_name.read().await.clone();
-        Runtime::locate().spawn(async move {
+
+        let _handle = spawn(async move {
             if let Err(e) = sender.send((operation_name, trace)).await {
                 error!(error = ?e);
             }
@@ -466,14 +299,12 @@ impl Extension for ApolloTracingExtension {
         let start_time = Utc::now() - self.inner.lock().await.start_time;
         let path_node = info.path_node;
 
-        let node: Trace_Node = Trace_Node {
+        let node: Node = Node {
             end_time: 0,
             id: match path_node.segment {
-                QueryPathSegment::Name(name) => {
-                    Some(Trace_Node_oneof_id::response_name(name.to_string()))
-                }
+                QueryPathSegment::Name(name) => Some(node::Id::ResponseName(name.to_string())),
                 QueryPathSegment::Index(index) => {
-                    Some(Trace_Node_oneof_id::index(index.try_into().unwrap_or(0)))
+                    Some(node::Id::Index(index.try_into().unwrap_or(0)))
                 }
             },
             start_time: match start_time
@@ -481,13 +312,18 @@ impl Extension for ApolloTracingExtension {
                 .and_then(|x| u64::try_from(x).ok())
             {
                 Some(duration) => duration,
-                None => Utc::now().timestamp_nanos().try_into().unwrap(),
+                None => Utc::now()
+                    .timestamp_nanos_opt()
+                    .unwrap_or_default()
+                    .try_into()
+                    .unwrap_or_default(),
             },
             parent_type: parent_type.to_string(),
             original_field_name: field_name,
-            field_type: return_type,
+            r#type: return_type,
             ..Default::default()
         };
+
         let node = Arc::new(RwLock::new(node));
         self.nodes.write().await.insert(path, node.clone());
         let parent_node = path_node.parent.map(|x| x.to_string_vec().join("."));
@@ -496,46 +332,47 @@ impl Extension for ApolloTracingExtension {
         let res = match next.run(ctx, info).await {
             Ok(res) => Ok(res),
             Err(e) => {
-                let mut error = Trace_Error::new();
-                error.set_message(e.message.clone());
-                error.set_location(RepeatedField::from_vec(
-                    e.locations
-                        .clone()
-                        .into_iter()
-                        .map(|x| Trace_Location {
-                            line: x.line as u32,
-                            column: x.column as u32,
-                            ..Default::default()
-                        })
-                        .collect(),
-                ));
                 let json = match serde_json::to_string(&e) {
                     Ok(content) => content,
                     Err(e) => serde_json::json!({ "error": format!("{:?}", e) }).to_string(),
                 };
-                error.set_json(json);
-                node.write()
-                    .await
-                    .set_error(RepeatedField::from_vec(vec![error]));
+                let error = trace::Error {
+                    message: e.message.clone(),
+                    location: e
+                        .locations
+                        .clone()
+                        .into_iter()
+                        .map(|x| trace::Location {
+                            line: x.line as u32,
+                            column: x.column as u32,
+                        })
+                        .collect(),
+                    json,
+                    ..Default::default()
+                };
+
+                node.write().await.error = vec![error];
                 Err(e)
             }
         };
         let end_time = Utc::now() - self.inner.lock().await.start_time;
 
-        node.write().await.set_end_time(
-            match end_time
-                .num_nanoseconds()
-                .and_then(|x| u64::try_from(x).ok())
-            {
-                Some(duration) => duration,
-                None => Utc::now().timestamp_nanos().try_into().unwrap(),
-            },
-        );
+        node.write().await.end_time = match end_time
+            .num_nanoseconds()
+            .and_then(|x| u64::try_from(x).ok())
+        {
+            Some(duration) => duration,
+            None => Utc::now()
+                .timestamp_nanos_opt()
+                .unwrap_or_default()
+                .try_into()
+                .unwrap_or_default(),
+        };
 
         match parent_node {
             None => {
                 let mut root_node = self.root_node.write().await;
-                let child = &mut *root_node.mut_child();
+                let child = &mut root_node.child;
                 let node = node.read().await;
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
@@ -543,9 +380,9 @@ impl Extension for ApolloTracingExtension {
             }
             Some(parent) => {
                 let nodes = self.nodes.read().await;
-                let node_read = &*nodes.get(&parent).unwrap();
+                let node_read = nodes.get(&parent).unwrap();
                 let mut parent = node_read.write().await;
-                let child = &mut *parent.mut_child();
+                let child = &mut parent.child;
                 let node = node.read().await;
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
