@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.1.0...v3.2.0) - 2023-12-28
+
+### Added
+- update Cargo.lock
+
 ## [3.1.0](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.0.1...v3.1.0) - 2023-12-28
 
 ### Added
