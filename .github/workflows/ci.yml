@@ -38,7 +38,7 @@ jobs:
         include:
         - build: pinned
           os: ubuntu-latest
-          rust: 1.74.0
+          rust: 1.75.0
         - build: stable
           os: ubuntu-latest
           rust: stable
@@ -48,35 +48,6 @@ jobs:
         - build: nightly
           os: ubuntu-latest
           rust: nightly
-        - build: stable-musl
-          os: ubuntu-latest
-          rust: stable
-          target: x86_64-unknown-linux-musl
-        - build: stable-x86
-          os: ubuntu-latest
-          rust: stable
-          target: i686-unknown-linux-gnu
-        - build: stable-aarch64
-          os: ubuntu-latest
-          rust: stable
-          target: aarch64-unknown-linux-gnu
-        - build: stable-powerpc64
-          os: ubuntu-latest
-          rust: stable
-          target: powerpc64-unknown-linux-gnu
-        - build: stable-s390x
-          os: ubuntu-latest
-          rust: stable
-          target: s390x-unknown-linux-gnu
-        - build: macos
-          os: macos-latest
-          rust: nightly
-        - build: win-msvc
-          os: windows-2022
-          rust: nightly
-        - build: win-gnu
-          os: windows-2022
-          rust: nightly-x86_64-gnu
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -156,6 +127,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Install protoc (Ubuntu)
+      shell: bash
+      run: |-
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -171,7 +149,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install protoc (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |-
             sudo apt-get update
