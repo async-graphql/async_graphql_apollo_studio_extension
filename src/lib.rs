@@ -116,7 +116,7 @@ impl ApolloTracing {
     ///
     /// * autorization_token - Token to send metrics to apollo studio.
     /// * hostname - Hostname like yourdomain-graphql-1.io
-    /// * graph_ref - <ref>@<variant> Graph reference with variant
+    /// * graph_ref - `ref@variant`  Graph reference with variant
     /// * release_name - Your release version or release name from Git for example
     pub fn new(
         authorization_token: String,
