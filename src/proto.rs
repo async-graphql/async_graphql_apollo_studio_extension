@@ -1,3 +1,4 @@
+#![allow(rustdoc::all)]
 #![allow(clippy::all)]
 
 pub mod report {
