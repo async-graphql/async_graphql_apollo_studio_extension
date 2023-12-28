@@ -21,7 +21,6 @@ jobs:
           fetch-depth: 0
 
       - name: Install protoc (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |-
             sudo apt-get update
