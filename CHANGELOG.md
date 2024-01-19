@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.4](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.3...v3.2.4) - 2024-01-19
+
+### Other
+- *(deps)* bump h2 from 0.3.22 to 0.3.24
+- *(deps)* bump h2 from 0.3.22 to 0.3.24 in /example/simple
+
 ## [3.2.3](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.2...v3.2.3) - 2024-01-19
 
 ### Other
