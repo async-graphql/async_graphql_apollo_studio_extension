@@ -22,7 +22,7 @@ async-graphql = { version = "7" }
 async-trait = "0.1"
 chrono = "0.4"
 cfg-if = "1"
-derive_builder = "0.12"
+derive_builder = "0.13"
 futures = "0.3"
 futures-locks = "0.7"
 prost = "0.12"
