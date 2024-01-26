@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.7](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.6...v3.2.7) - 2024-01-26
+
+### Other
+- *(deps)* bump chrono from 0.4.32 to 0.4.33
+
 ## [3.2.6](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.5...v3.2.6) - 2024-01-23
 
 ### Other
