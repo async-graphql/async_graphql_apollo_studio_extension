@@ -150,7 +150,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tonic",
  "tonic-build",
  "tracing",
@@ -767,7 +767,7 @@ checksum = "45ec6fe3675af967e67c5536c0b9d44e34e6c52f86bedc4ea49c5317b8e94d06"
 dependencies = [
  "futures-channel",
  "futures-task",
- "tokio 1.35.1",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -852,7 +852,7 @@ dependencies = [
  "http 0.2.11",
  "indexmap 2.1.0",
  "slab",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-util",
  "tracing",
 ]
@@ -976,7 +976,7 @@ dependencies = [
  "itoa",
  "pin-project-lite",
  "socket2",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tower-service",
  "tracing",
  "want",
@@ -990,7 +990,7 @@ checksum = "bbb958482e8c7be4bc3cf272a766a2b0bf1a6755e7a6ae777f017a31d11b13b1"
 dependencies = [
  "hyper",
  "pin-project-lite",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-io-timeout",
 ]
 
@@ -1003,7 +1003,7 @@ dependencies = [
  "bytes 1.5.0",
  "hyper",
  "native-tls",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-native-tls",
 ]
 
@@ -1759,7 +1759,7 @@ dependencies = [
  "serde_urlencoded",
  "sync_wrapper",
  "system-configuration",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-native-tls",
  "tower-service",
  "url",
@@ -2137,9 +2137,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.35.1"
+version = "1.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89b4efa943be685f629b149f53829423f8f5531ea21249408e8e2f8671ec104"
+checksum = "61285f6515fa018fb2d1e46eb21223fff441ee8db5d0f1435e8ab4f5cdb80931"
 dependencies = [
  "backtrace",
  "bytes 1.5.0",
@@ -2214,7 +2214,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30b74022ada614a1b4834de765f9bb43877f910cc8ce4be40e89042c9223a8bf"
 dependencies = [
  "pin-project-lite",
- "tokio 1.35.1",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -2235,7 +2235,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
 dependencies = [
  "native-tls",
- "tokio 1.35.1",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -2265,7 +2265,7 @@ checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
 dependencies = [
  "futures-core",
  "pin-project-lite",
- "tokio 1.35.1",
+ "tokio 1.36.0",
 ]
 
 [[package]]
@@ -2364,7 +2364,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "pin-project-lite",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tracing",
 ]
 
@@ -2404,7 +2404,7 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-stream",
  "tower",
  "tower-layer",
@@ -2438,7 +2438,7 @@ dependencies = [
  "pin-project-lite",
  "rand",
  "slab",
- "tokio 1.35.1",
+ "tokio 1.36.0",
  "tokio-util",
  "tower-layer",
  "tower-service",
