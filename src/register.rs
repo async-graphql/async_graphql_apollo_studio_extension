@@ -2,7 +2,7 @@
 //!
 //! Implementation of the apollo Schema Reporting Protocol
 //! <https://www.apollographql.com/docs/studio/schema/schema-reporting/>
-use async_graphql::{ObjectType, Schema, dynamic, SubscriptionType};
+use async_graphql::{dynamic, ObjectType, Schema, SubscriptionType};
 use reqwest::Client;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -31,9 +31,7 @@ pub fn sha<Q: ObjectType + 'static, M: ObjectType + 'static, S: SubscriptionType
  * Compute the SHA256 of a dynamic Schema
  * Usefull for Apollo Studio
  */
-pub fn sha_dynamic(
-    schema: &dynamic::Schema,
-) -> String {
+pub fn sha_dynamic(schema: &dynamic::Schema) -> String {
     let mut hasher = Sha256::new();
     let schema_sdl = schema.sdl();
     let schema_bytes = schema_sdl.as_bytes();
