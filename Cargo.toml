@@ -18,7 +18,7 @@ tokio-comp = ["tokio"]
 
 [dependencies]
 anyhow = "1"
-async-graphql = { version = "7" }
+async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-trait = "0.1"
 chrono = "0.4"
 cfg-if = "1"
