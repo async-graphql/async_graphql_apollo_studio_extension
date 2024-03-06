@@ -46,4 +46,4 @@ reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"
 tonic-build = "0.10"
 cfg-if = "1.0.0"
 tokio = { version = "1", features = ["full"], optional = true }
-async-std = { version = "1", features = ["default"], optional = true }
+async-std = { version = "1", features = ["default", "tokio1"], optional = true }
