@@ -7,12 +7,23 @@ use std::{
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Skip building online from docs.rs
-    if std::env::var_os("DOCS_RS").is_some() {
-    } else {
+    if std::env::var_os("DOCS_RS").is_some() {} else {
         // Retrieve a live version of the reports.proto file
         let proto_url = "https://usage-reporting.api.apollographql.com/proto/reports.proto";
-        let response = reqwest::blocking::get(proto_url)?;
-        let mut content = response.text()?;
+        let fut = reqwest::get(proto_url);
+
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "tokio-comp")] {
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                let response = rt.block_on(fut)?;
+                let mut content = rt.block_on(response.text())?;
+            } else if #[cfg(feature = "async-std-comp")] {
+                let response = async_std::task::block_on(fut)?;
+                let mut content = async_std::task::block_on(response.text())?;
+            } else {
+                compile_error!("tokio-comp or async-std-comp features required");
+            }
+        }
 
         // Process the retrieved content to:
         //  - Insert a package Report; line after the import lines (currently only one) and before the first message definition

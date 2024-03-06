@@ -25,7 +25,6 @@ chrono = "0.4"
 cfg-if = "1"
 derive_builder = "0.13"
 futures = "0.3"
-futures-locks = "0.7"
 prost = "0.12"
 prost-types = "0.12"
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
@@ -43,5 +42,8 @@ tokio = { version = "1", features = ["full"], optional = true }
 async-std = { version = "1", features = ["default"], optional = true }
 
 [build-dependencies]
-reqwest = { version = "0.11", features = ["blocking"] }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
 tonic-build = "0.10"
+cfg-if = "1.0.0"
+tokio = { version = "1", features = ["full"], optional = true }
+async-std = { version = "1", features = ["default"], optional = true }

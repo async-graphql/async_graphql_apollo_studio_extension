@@ -40,7 +40,7 @@ use runtime::spawn;
 #[macro_use]
 extern crate tracing;
 
-use futures_locks::RwLock;
+use std::sync::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -194,7 +194,7 @@ impl Extension for ApolloTracingExtension {
                 .map(|x| x.as_str())
                 .unwrap_or("no_name");
             let query_type = format!("# {name}\n {query}", name = name, query = result);
-            *self.operation_name.write().await = query_type;
+            *self.operation_name.write().unwrap() = query_type;
         }
         Ok(document)
     }
@@ -267,12 +267,12 @@ impl Extension for ApolloTracingExtension {
             seconds: inner.start_time.timestamp(),
         });
 
-        let root_node = self.root_node.read().await;
+        let root_node = self.root_node.read().unwrap();
         trace.root = Some(root_node.clone());
 
         let mut sender = self.report.sender();
 
-        let operation_name = self.operation_name.read().await.clone();
+        let operation_name = self.operation_name.read().unwrap().clone();
 
         let _handle = spawn(async move {
             if let Err(e) = sender.send((operation_name, trace)).await {
@@ -325,7 +325,7 @@ impl Extension for ApolloTracingExtension {
         };
 
         let node = Arc::new(RwLock::new(node));
-        self.nodes.write().await.insert(path, node.clone());
+        self.nodes.write().unwrap().insert(path, node.clone());
         let parent_node = path_node.parent.map(|x| x.to_string_vec().join("."));
         // Use the path to create a new node
         // https://github.com/apollographql/apollo-server/blob/291c17e255122d4733b23177500188d68fac55ce/packages/apollo-server-core/src/plugin/traceTreeBuilder.ts
@@ -351,13 +351,13 @@ impl Extension for ApolloTracingExtension {
                     ..Default::default()
                 };
 
-                node.write().await.error = vec![error];
+                node.write().unwrap().error = vec![error];
                 Err(e)
             }
         };
         let end_time = Utc::now() - self.inner.lock().await.start_time;
 
-        node.write().await.end_time = match end_time
+        node.write().unwrap().end_time = match end_time
             .num_nanoseconds()
             .and_then(|x| u64::try_from(x).ok())
         {
@@ -371,19 +371,19 @@ impl Extension for ApolloTracingExtension {
 
         match parent_node {
             None => {
-                let mut root_node = self.root_node.write().await;
+                let mut root_node = self.root_node.write().unwrap();
                 let child = &mut root_node.child;
-                let node = node.read().await;
+                let node = node.read().unwrap();
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
                 child.push(node.clone());
             }
             Some(parent) => {
-                let nodes = self.nodes.read().await;
+                let nodes = self.nodes.read().unwrap();
                 let node_read = nodes.get(&parent).unwrap();
-                let mut parent = node_read.write().await;
+                let mut parent = node_read.write().unwrap();
                 let child = &mut parent.child;
-                let node = node.read().await;
+                let node = node.read().unwrap();
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
                 child.push(node.clone());
