@@ -4,13 +4,11 @@ use futures::{
     channel::mpsc::{self, Sender},
     StreamExt,
 };
-#[cfg(feature = "tokio-comp")]
-use tokio::time::Instant;
 
 use crate::{
     packages::uname::Uname,
     proto::report::{Report, ReportHeader, Trace, TracesAndStats},
-    runtime::{spawn, JoinHandle},
+    runtime::{spawn, JoinHandle, abort, Instant},
 };
 
 /// The [ReportAggregator] is the structure which control the background task spawned to aggregate
@@ -145,14 +143,7 @@ impl ReportAggregator {
 
 impl Drop for ReportAggregator {
     fn drop(&mut self) {
-        cfg_if::cfg_if! {
-            if #[cfg(all(feature = "tokio-comp", not(feature = "async-std-comp")))] {
-                self.handle.abort();
-            } else if #[cfg(feature = "async-std-comp")] {
-            } else {
-                compile_error!("tokio-comp or async-std-comp features required");
-            }
-        }
+        abort(&self.handle);
         // TODO: Wait for the proper aborted task
     }
 }
