@@ -27,7 +27,7 @@ cfg_if::cfg_if! {
             async_std::task::spawn(f)
         }
 
-        pub fn abort(handle: &JoinHandle<()>) {}
+        pub fn abort(_handle: &JoinHandle<()>) {}
 
         pub struct Instant(std::time::Instant);
         impl Instant {
