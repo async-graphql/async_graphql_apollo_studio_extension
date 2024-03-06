@@ -40,9 +40,9 @@ use runtime::spawn;
 #[macro_use]
 extern crate tracing;
 
-use std::sync::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::RwLock;
 
 use async_graphql::QueryPathSegment;
 use chrono::{DateTime, Utc};

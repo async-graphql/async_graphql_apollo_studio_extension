@@ -13,10 +13,8 @@ edition = "2021"
 resolver = "2"
 
 [features]
-default = ["tokio-comp", "compression"]
+default = ["compression"]
 compression = ["libflate"]
-tokio-comp = ["tokio"]
-async-std-comp = ["async-std"]
 
 [dependencies]
 anyhow = "1"
@@ -32,21 +30,25 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
-tonic = "0.10"
 tracing = "0.1"
 tracing-futures = { version = "0.2.5", default-features = false, features = ["futures-03", "std"] }
-uuid = { version = "1.7", features = ["v4"] }                  # A library to generate and parse UUIDs.
+uuid = { version = "1.7", features = ["v4", "js"] }                  # A library to generate and parse UUIDs.
+wasm-bindgen-futures = "0.4.18"
 
 # Non-feature optional dependencies
 libflate = { version = "2", optional = true }
-async-std = { version = "1", features = ["default"], optional = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1", features = ["full"], optional = true }
+tonic = "0.10"
+tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
-tonic-build = "0.10"
+async-std = { version = "1", default-features = false, features = ["default", "tokio1"] }
 cfg-if = "1.0.0"
-tokio = { version = "1", features = ["full"], optional = true }
-async-std = { version = "1", features = ["default", "tokio1"], optional = true }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+prost-build = "0.12.3"
+protox = "0.6.0"
+tonic-build = "0.10"
+
+[target.'cfg(not(target_arch = "wasm32"))'.build-dependencies]
+tokio = { version = "1", features = ["full"] }

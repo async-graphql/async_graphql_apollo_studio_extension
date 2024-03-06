@@ -8,7 +8,7 @@ use futures::{
 use crate::{
     packages::uname::Uname,
     proto::report::{Report, ReportHeader, Trace, TracesAndStats},
-    runtime::{spawn, JoinHandle, abort, Instant},
+    runtime::{abort, spawn, Instant, JoinHandle},
 };
 
 /// The [ReportAggregator] is the structure which control the background task spawned to aggregate

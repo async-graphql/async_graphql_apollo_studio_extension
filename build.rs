@@ -1,27 +1,30 @@
 // Derived from https://github.com/pellizzetti/router/blob/cc0ebcaf1d68184e1fe06f16534fddff76286b40/apollo-spaceport/build.rs
+use protox::prost::Message;
+use std::path::PathBuf;
 use std::{
+    env,
     error::Error,
+    fs,
     fs::File,
     io::{copy, Read},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Skip building online from docs.rs
-    if std::env::var_os("DOCS_RS").is_some() {} else {
+    if std::env::var_os("DOCS_RS").is_some() {
+    } else {
         // Retrieve a live version of the reports.proto file
         let proto_url = "https://usage-reporting.api.apollographql.com/proto/reports.proto";
         let fut = reqwest::get(proto_url);
 
         cfg_if::cfg_if! {
-            if #[cfg(feature = "tokio-comp")] {
+            if #[cfg(not(target_arch = "wasm32"))] {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 let response = rt.block_on(fut)?;
                 let mut content = rt.block_on(response.text())?;
-            } else if #[cfg(feature = "async-std-comp")] {
+            } else {
                 let response = async_std::task::block_on(fut)?;
                 let mut content = async_std::task::block_on(response.text())?;
-            } else {
-                compile_error!("tokio-comp or async-std-comp features required");
             }
         }
 
@@ -58,6 +61,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Process the proto files
     let proto_files = vec!["proto/agents.proto", "proto/reports.proto"];
 
+    let file_descriptors = protox::compile(&proto_files, ["."]).unwrap();
+
+    let file_descriptor_path =
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("file_descriptor_set.bin");
+    fs::write(&file_descriptor_path, file_descriptors.encode_to_vec())?;
+
     tonic_build::configure()
         .type_attribute("ContextualizedStats", "#[derive(serde::Serialize)]")
         .type_attribute("StatsContext", "#[derive(serde::Serialize)]")
@@ -68,6 +77,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .type_attribute("ReferencedFieldsForType", "#[derive(serde::Serialize)]")
         .type_attribute("StatsContext", "#[derive(Eq, Hash)]")
         .build_server(true)
+        .file_descriptor_set_path(&file_descriptor_path)
+        .skip_protoc_run()
         .compile(&proto_files, &["."])?;
 
     for file in proto_files {
