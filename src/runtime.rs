@@ -8,6 +8,10 @@ cfg_if::cfg_if! {
         pub fn spawn(f: impl Future<Output = ()> + Send + 'static) -> JoinHandle<()> {
             tokio::spawn(f)
         }
+    } else if #[cfg(all(feature = "async-std-comp", not(feature = "tokio-comp")))] {
+        pub fn spawn(f: impl Future<Output = ()> + Send + 'static) -> JoinHandle<()> {
+            async_std::task::spawn(f)
+        }
     } else {
         compile_error!("tokio-comp or async-std-comp features required");
     }
