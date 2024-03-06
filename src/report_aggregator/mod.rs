@@ -15,6 +15,7 @@ use crate::{
 /// The [ReportAggregator] is the structure which control the background task spawned to aggregate
 /// and send data through Apollo Studio by constructing [Report] ready to be send
 pub struct ReportAggregator {
+    #[allow(dead_code)]
     handle: JoinHandle<()>,
     sender: Sender<(String, Trace)>,
 }
@@ -143,7 +144,14 @@ impl ReportAggregator {
 
 impl Drop for ReportAggregator {
     fn drop(&mut self) {
-        self.handle.abort();
+        cfg_if::cfg_if! {
+            if #[cfg(all(feature = "tokio-comp", not(feature = "async-std-comp")))] {
+                self.handle.abort();
+            } else if #[cfg(feature = "async-std-comp")] {
+            } else {
+                compile_error!("tokio-comp or async-std-comp features required");
+            }
+        }
         // TODO: Wait for the proper aborted task
     }
 }
