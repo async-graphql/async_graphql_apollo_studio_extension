@@ -15,6 +15,7 @@ edition = "2021"
 default = ["tokio-comp", "compression"]
 compression = ["libflate"]
 tokio-comp = ["tokio"]
+async-std-comp = ["async-std"]
 
 [dependencies]
 anyhow = "1"
@@ -39,6 +40,7 @@ uuid = { version = "1.7", features = ["v4"] }                  # A library to ge
 # Non-feature optional dependencies
 libflate = { version = "2", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
+async-std = { version = "1", features = ["default"], optional = true }
 
 [build-dependencies]
 reqwest = { version = "0.11", features = ["blocking"] }
