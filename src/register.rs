@@ -49,7 +49,7 @@ pub fn sha_dynamic(schema: &dynamic::Schema) -> String {
 /// * `user_version` - An arbitrary string you can set to distinguish data sent by different versions of your edge server. For example, this can be the SHA of the Git commit for your deployed server code. We plan to make this value visible in Apollo Studio.
 /// * `platform` - The infrastructure environment that your edge server is running in (localhost, kubernetes/deployment, aws lambda, google cloud run, google cloud function, AWS ECS, etc.)
 #[instrument(err, skip(authorization_token, schema))]
-pub async fn register<
+pub fn register<
     Q: ObjectType + 'static,
     M: ObjectType + 'static,
     S: SubscriptionType + 'static,
@@ -120,8 +120,9 @@ pub async fn register<
         }))
         .header("content-type", "application/json")
         .header("X-Api-Key", authorization_token)
-        .send()
-        .await;
+        .send();
+
+    let result = eval_future(result);
 
     match result {
         Ok(data) => {
@@ -130,7 +131,7 @@ pub async fn register<
                 message = "Schema correctly registered",
                 response = &tracing::field::debug(&data)
             );
-            let text = data.text().await;
+            let text = eval_future(data.text());
             debug!(target: TARGET_LOG, data = ?text);
             Ok(())
         }
@@ -151,7 +152,7 @@ pub async fn register<
 /// * `user_version` - An arbitrary string you can set to distinguish data sent by different versions of your edge server. For example, this can be the SHA of the Git commit for your deployed server code. We plan to make this value visible in Apollo Studio.
 /// * `platform` - The infrastructure environment that your edge server is running in (localhost, kubernetes/deployment, aws lambda, google cloud run, google cloud function, AWS ECS, etc.)
 #[instrument(err, skip(authorization_token, schema))]
-pub async fn register_dynamic(
+pub fn register_dynamic(
     authorization_token: &str,
     schema: &dynamic::Schema,
     server_id: &str,
@@ -218,8 +219,9 @@ pub async fn register_dynamic(
         }))
         .header("content-type", "application/json")
         .header("X-Api-Key", authorization_token)
-        .send()
-        .await;
+        .send();
+
+    let result = eval_future(result);
 
     match result {
         Ok(data) => {
@@ -228,7 +230,7 @@ pub async fn register_dynamic(
                 message = "Schema correctly registered",
                 response = &tracing::field::debug(&data)
             );
-            let text = data.text().await;
+            let text = eval_future(data.text());
             debug!(target: TARGET_LOG, data = ?text);
             Ok(())
         }
@@ -236,6 +238,18 @@ pub async fn register_dynamic(
             let status_code = err.status();
             error!(target: TARGET_LOG, status = ?status_code, error = ?err);
             Err(anyhow::anyhow!(err))
+        }
+    }
+}
+
+fn eval_future<T>(fut: impl std::future::Future<Output = T>) -> T {
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "tokio-comp")] {
+            tokio::runtime::Runtime::new().unwrap().block_on(fut)
+        } else if #[cfg(feature = "async-std-comp")] {
+            async_std::task::block_on(result)
+        } else {
+            compile_error!("tokio-comp or async-std-comp features required");
         }
     }
 }
