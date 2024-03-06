@@ -4,6 +4,7 @@ use futures::{
     channel::mpsc::{self, Sender},
     StreamExt,
 };
+#[cfg(feature = "tokio-comp")]
 use tokio::time::Instant;
 
 use crate::{
