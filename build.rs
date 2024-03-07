@@ -68,13 +68,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     fs::write(&file_descriptor_path, file_descriptors.encode_to_vec())?;
 
     tonic_build::configure()
-        .type_attribute("ContextualizedStats", "#[derive(serde::Serialize)]")
-        .type_attribute("StatsContext", "#[derive(serde::Serialize)]")
-        .type_attribute("QueryLatencyStats", "#[derive(serde::Serialize)]")
-        .type_attribute("TypeStat", "#[derive(serde::Serialize)]")
-        .type_attribute("PathErrorStats", "#[derive(serde::Serialize)]")
-        .type_attribute("FieldStat", "#[derive(serde::Serialize)]")
-        .type_attribute("ReferencedFieldsForType", "#[derive(serde::Serialize)]")
         .type_attribute("StatsContext", "#[derive(Eq, Hash)]")
         .build_server(true)
         .file_descriptor_set_path(&file_descriptor_path)
