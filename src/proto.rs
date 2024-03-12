@@ -1,10 +1,6 @@
 #![allow(rustdoc::all)]
 #![allow(clippy::all)]
 
-pub mod report {
-    tonic::include_proto!("report");
-}
-
-pub mod agent {
-    tonic::include_proto!("agent");
+pub mod reports {
+    include!(concat!(env!("OUT_DIR"), concat!("/proto/reports.rs")));
 }

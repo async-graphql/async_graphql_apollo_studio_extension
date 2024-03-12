@@ -1,4 +1,7 @@
 // Derived from https://github.com/pellizzetti/router/blob/cc0ebcaf1d68184e1fe06f16534fddff76286b40/apollo-spaceport/build.rs
+use protobuf_codegen::Customize;
+use std::io::Write;
+use std::path::Path;
 use std::{
     error::Error,
     fs::File,
@@ -45,22 +48,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Process the proto files
-    let proto_files = vec!["proto/agents.proto", "proto/reports.proto"];
+    let proto_files = vec!["proto/reports.proto"];
 
-    // Set PROTOC Path
-    std::env::set_var("PROTOC", protoc_bin_vendored::protoc_bin_path().unwrap());
+    protobuf_codegen::Codegen::new()
+        .pure()
+        .cargo_out_dir("proto")
+        .inputs(&proto_files)
+        .include(".")
+        .customize(Customize::default().gen_mod_rs(false))
+        .run_from_script();
 
-    tonic_build::configure()
-        .type_attribute("ContextualizedStats", "#[derive(serde::Serialize)]")
-        .type_attribute("StatsContext", "#[derive(serde::Serialize)]")
-        .type_attribute("QueryLatencyStats", "#[derive(serde::Serialize)]")
-        .type_attribute("TypeStat", "#[derive(serde::Serialize)]")
-        .type_attribute("PathErrorStats", "#[derive(serde::Serialize)]")
-        .type_attribute("FieldStat", "#[derive(serde::Serialize)]")
-        .type_attribute("ReferencedFieldsForType", "#[derive(serde::Serialize)]")
-        .type_attribute("StatsContext", "#[derive(Eq, Hash)]")
-        .build_server(true)
-        .compile(&proto_files, &["."])?;
+    let out_dir = std::env::var("OUT_DIR")?;
+    let path = Path::new(&out_dir).join("proto").join("reports.rs");
+    let content = std::fs::read_to_string(&path)?;
+
+    let content = content
+        .lines()
+        .filter(|line| !(line.contains("#![") || line.contains("//!")))
+        .fold(String::new(), |mut content, line| {
+            content.push_str(line);
+            content.push('\n');
+            content
+        });
+
+    std::fs::remove_file(&path)?;
+    let mut file = std::fs::File::create(&path)?;
+    file.write_all(content.as_bytes())?;
 
     for file in proto_files {
         println!("cargo:rerun-if-changed={}", file);

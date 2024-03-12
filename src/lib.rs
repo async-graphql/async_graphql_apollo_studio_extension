@@ -33,7 +33,7 @@ mod report_aggregator;
 
 mod runtime;
 use futures::SinkExt;
-use prost_types::Timestamp;
+use protobuf::{well_known_types::timestamp::Timestamp, EnumOrUnknown, MessageField};
 use report_aggregator::ReportAggregator;
 use runtime::spawn;
 
@@ -55,13 +55,13 @@ use async_graphql::extensions::{
 };
 use async_graphql::parser::types::{ExecutableDocument, OperationType, Selection};
 use async_graphql::{Response, ServerResult, Value, Variables};
-use proto::report::{
+use proto::reports::{
     trace::{self, node, Node},
     Trace,
 };
 use std::convert::TryInto;
 
-pub use proto::report::trace::http::Method;
+pub use proto::reports::trace::http::Method;
 
 /// Apollo Tracing Extension to send traces to Apollo Studio
 /// The extension to include to your `async_graphql` instance to connect with Apollo Studio.
@@ -227,7 +227,9 @@ impl Extension for ApolloTracingExtension {
         let client_version = tracing_extension
             .client_version
             .unwrap_or_else(|| "no client version".to_string());
-        let method = tracing_extension.method.unwrap_or(Method::Unknown);
+        let method = tracing_extension
+            .method
+            .or(<Method as protobuf::Enum>::from_str("UNKNOWN"));
         let status_code = tracing_extension.status_code.unwrap_or(0);
 
         let mut trace: Trace = Trace {
@@ -245,30 +247,35 @@ impl Extension for ApolloTracingExtension {
                 .map(|x| x.to_string())
                 .unwrap_or_else(|| "no operation".to_string()),
             ..Default::default()
-        });
+        })
+        .into();
 
-        trace.http = Some(trace::Http {
-            method: method.into(),
+        trace.http = Some(trace::HTTP {
+            method: EnumOrUnknown::new(method.unwrap()),
             status_code,
             ..Default::default()
-        });
+        })
+        .into();
 
-        trace.end_time = Some(Timestamp {
+        trace.end_time = MessageField::some(Timestamp {
             nanos: inner.end_time.timestamp_subsec_nanos().try_into().unwrap(),
             seconds: inner.end_time.timestamp(),
+            special_fields: Default::default(),
         });
 
-        trace.start_time = Some(Timestamp {
-            nanos: inner
-                .start_time
-                .timestamp_subsec_nanos()
-                .try_into()
-                .unwrap(),
-            seconds: inner.start_time.timestamp(),
-        });
+        trace.start_time =
+            protobuf::MessageField::some(protobuf::well_known_types::timestamp::Timestamp {
+                nanos: inner
+                    .start_time
+                    .timestamp_subsec_nanos()
+                    .try_into()
+                    .unwrap(),
+                seconds: inner.start_time.timestamp(),
+                special_fields: Default::default(),
+            });
 
         let root_node = self.root_node.read().await;
-        trace.root = Some(root_node.clone());
+        trace.root = Some(root_node.clone()).into();
 
         let mut sender = self.report.sender();
 
@@ -295,7 +302,7 @@ impl Extension for ApolloTracingExtension {
         let path = info.path_node.to_string_vec().join(".");
         let field_name = info.path_node.field_name().to_string();
         let parent_type = info.parent_type.to_string();
-        let return_type = info.return_type.to_string();
+        let _return_type = info.return_type.to_string();
         let start_time = Utc::now() - self.inner.lock().await.start_time;
         let path_node = info.path_node;
 
@@ -320,7 +327,6 @@ impl Extension for ApolloTracingExtension {
             },
             parent_type: parent_type.to_string(),
             original_field_name: field_name,
-            r#type: return_type,
             ..Default::default()
         };
 
@@ -345,6 +351,7 @@ impl Extension for ApolloTracingExtension {
                         .map(|x| trace::Location {
                             line: x.line as u32,
                             column: x.column as u32,
+                            special_fields: protobuf::SpecialFields::default(),
                         })
                         .collect(),
                     json,

@@ -4,11 +4,12 @@ use futures::{
     channel::mpsc::{self, Sender},
     StreamExt,
 };
+use protobuf::Message;
 use tokio::time::Instant;
 
 use crate::{
     packages::uname::Uname,
-    proto::report::{Report, ReportHeader, Trace, TracesAndStats},
+    proto::reports::{Report, ReportHeader, Trace, TracesAndStats},
     runtime::{spawn, JoinHandle},
 };
 
@@ -46,6 +47,7 @@ impl ReportAggregator {
             agent_version: format!("async-studio-extension-{}", VERSION),
             runtime_version: "Rust".to_string(),
             executable_schema_id: graph_id,
+            special_fields: Default::default(),
         };
 
         let handle = spawn(async move {
@@ -92,11 +94,12 @@ impl ReportAggregator {
                     let report: Report = Report {
                         traces_pre_aggregated: false,
                         traces_per_query: hashmap_to_send,
-                        header: Some(reported_header.clone()),
+                        header: Some(reported_header.clone()).into(),
                         ..Default::default()
                     };
 
-                    let msg = prost::Message::encode_to_vec(&report);
+                    let msg = report.write_to_bytes().unwrap();
+                    // let msg = prost::Message::encode_to_vec(&report);
 
                     let mut client = client
                         .post(REPORTING_URL)
