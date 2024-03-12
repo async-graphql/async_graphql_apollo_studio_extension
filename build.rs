@@ -47,6 +47,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Process the proto files
     let proto_files = vec!["proto/agents.proto", "proto/reports.proto"];
 
+    // Set PROTOC Path
+    std::env::set_var("PROTOC", protoc_bin_vendored::protoc_bin_path().unwrap());
+
     tonic_build::configure()
         .type_attribute("ContextualizedStats", "#[derive(serde::Serialize)]")
         .type_attribute("StatsContext", "#[derive(serde::Serialize)]")
