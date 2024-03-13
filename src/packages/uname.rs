@@ -1,6 +1,6 @@
 
 cfg_if::cfg_if! {
-    if #[cfg(all(target_arch = "wasm32", target_os = "windows"))] {
+    if #[cfg(any(target_arch = "wasm32", target_os = "windows"))] {
         pub fn uname() -> std::io::Result<String> {
             Err(std::io::Error::new(std::io::ErrorKind::NotFound, "not supported on wasm32"))
         }
