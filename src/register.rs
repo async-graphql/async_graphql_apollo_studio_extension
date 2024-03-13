@@ -112,12 +112,12 @@ pub async fn register<
 
     let result = client
         .post(SCHEMA_URL)
-        .json(&serde_json::json!({
-            "query": mutation,
-            "variables": {
-                "schema": schema_sdl,
-            },
-        }))
+        .body(format!(r#"{{
+            \"query\": {mutation},
+            \"variables\": {{
+                \"schema\": {schema_sdl},
+            }},
+        }}"#))
         .header("content-type", "application/json")
         .header("X-Api-Key", authorization_token)
         .send()
@@ -210,12 +210,12 @@ pub async fn register_dynamic(
 
     let result = client
         .post(SCHEMA_URL)
-        .json(&serde_json::json!({
-            "query": mutation,
-            "variables": {
-                "schema": schema_sdl,
-            },
-        }))
+        .body(format!(r#"{{
+            \"query\": {mutation},
+            \"variables\": {{
+                \"schema\": {schema_sdl},
+            }},
+        }}"#))
         .header("content-type", "application/json")
         .header("X-Api-Key", authorization_token)
         .send()

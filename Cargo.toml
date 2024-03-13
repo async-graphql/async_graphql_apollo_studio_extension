@@ -10,11 +10,11 @@ license = "MIT"
 keywords = ["async_graphql", "async", "graphql", "apollo", "studio"]
 categories = ["network-programming", "asynchronous"]
 edition = "2021"
+resolver = "2"
 
 [features]
-default = ["tokio-comp", "compression"]
+default = ["compression"]
 compression = ["libflate"]
-tokio-comp = ["tokio"]
 
 [dependencies]
 anyhow = "1"
@@ -25,21 +25,33 @@ cfg-if = "1"
 derive_builder = "0.13"
 futures = "0.3"
 futures-locks = "0.7"
-prost = "0.12"
-prost-types = "0.12"
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
-serde_json = "1"
-serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
-tonic = "0.10"
+serde-json-wasm = "1.0.1"
 tracing = "0.1"
-tracing-futures = { version = "0.2.5", default-features = false, features = ["tokio", "futures-03", "std"] }
-uuid = { version = "1.7", features = ["v4"] }                  # A library to generate and parse UUIDs.
+uuid = { version = "1.7", features = ["v4", "js"] }                  # A library to generate and parse UUIDs.
+wasm-bindgen-futures = "0.4.18"
+protobuf = "3.4.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
 
 # Non-feature optional dependencies
 libflate = { version = "2", optional = true }
-tokio = { version = "1", features = ["full"], optional = true }
+
+[target.'cfg(all(not(target_arch = "wasm32"), not(target_os = "windows")))'.dependencies]
+uname = "0.1.1"
 
 [build-dependencies]
-reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls"] }
+protobuf-codegen = "3.4.0"
+async-std = { version = "1", default-features = false, features = ["default", "tokio1"] }
+cfg-if = "1.0.0"
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+prost-build = "0.12.3"
+protox = "0.6.0"
 tonic-build = "0.10"
+
+[target.'cfg(not(target_arch = "wasm32"))'.build-dependencies]
+tokio = { version = "1", features = ["full"] }
