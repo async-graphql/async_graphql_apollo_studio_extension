@@ -30,7 +30,6 @@ serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 tracing = "0.1"
-tracing-futures = { version = "0.2.5", default-features = false, features = ["tokio", "futures-03", "std"] }
 uuid = { version = "1.7", features = ["v4"] }                  # A library to generate and parse UUIDs.
 uname = "0.1.1"
 
