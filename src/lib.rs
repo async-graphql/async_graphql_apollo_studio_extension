@@ -26,7 +26,6 @@
 //!
 //! * `compression` - To enable GZIP Compression when sending traces to Apollo Studio.
 mod compression;
-mod packages;
 mod proto;
 pub mod register;
 mod report_aggregator;

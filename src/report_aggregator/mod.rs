@@ -8,7 +8,6 @@ use protobuf::Message;
 use tokio::time::Instant;
 
 use crate::{
-    packages::uname::Uname,
     proto::reports::{Report, ReportHeader, Trace, TracesAndStats},
     runtime::{spawn, JoinHandle},
 };
@@ -37,9 +36,15 @@ impl ReportAggregator {
         let (tx, mut rx) = mpsc::channel::<(String, Trace)>(BUFFER_SLOTS);
 
         let reported_header = ReportHeader {
-            uname: Uname::new()
+            uname: uname::uname()
                 .ok()
-                .map(|x| x.to_string())
+                .map(|x| format!("{sysname} {version} {release} {machine} {nodename}",
+                     sysname = x.sysname,
+                     version = x.version,
+                     release = x.release,
+                     machine = x.machine,
+                     nodename = x.nodename
+                ))
                 .unwrap_or_else(|| "No uname provided".to_string()),
             hostname,
             graph_ref: format!("{graph_id}@{variant}"),
