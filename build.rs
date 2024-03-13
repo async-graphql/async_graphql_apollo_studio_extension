@@ -1,10 +1,9 @@
 // Derived from https://github.com/pellizzetti/router/blob/cc0ebcaf1d68184e1fe06f16534fddff76286b40/apollo-spaceport/build.rs
-use protox::prost::Message;
-use std::path::PathBuf;
+use protobuf_codegen::Customize;
+use std::io::Write;
+use std::path::Path;
 use std::{
-    env,
     error::Error,
-    fs,
     fs::File,
     io::{copy, Read},
 };
@@ -59,20 +58,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Process the proto files
-    let proto_files = vec!["proto/agents.proto", "proto/reports.proto"];
+    let proto_files = vec!["proto/reports.proto"];
 
-    let file_descriptors = protox::compile(&proto_files, ["."]).unwrap();
+    protobuf_codegen::Codegen::new()
+        .pure()
+        .cargo_out_dir("proto")
+        .inputs(&proto_files)
+        .include(".")
+        .customize(Customize::default().gen_mod_rs(false))
+        .run_from_script();
 
-    let file_descriptor_path =
-        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("file_descriptor_set.bin");
-    fs::write(&file_descriptor_path, file_descriptors.encode_to_vec())?;
+    let out_dir = std::env::var("OUT_DIR")?;
+    let path = Path::new(&out_dir).join("proto").join("reports.rs");
+    let content = std::fs::read_to_string(&path)?;
 
-    tonic_build::configure()
-        .type_attribute("StatsContext", "#[derive(Eq, Hash)]")
-        .build_server(true)
-        .file_descriptor_set_path(&file_descriptor_path)
-        .skip_protoc_run()
-        .compile(&proto_files, &["."])?;
+    let content = content
+        .lines()
+        .filter(|line| !(line.contains("#![") || line.contains("//!")))
+        .fold(String::new(), |mut content, line| {
+            content.push_str(line);
+            content.push('\n');
+            content
+        });
+
+    std::fs::remove_file(&path)?;
+    let mut file = std::fs::File::create(&path)?;
+    file.write_all(content.as_bytes())?;
 
     for file in proto_files {
         println!("cargo:rerun-if-changed={}", file);
