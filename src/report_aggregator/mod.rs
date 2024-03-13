@@ -38,13 +38,16 @@ impl ReportAggregator {
         let reported_header = ReportHeader {
             uname: uname::uname()
                 .ok()
-                .map(|x| format!("{sysname} {version} {release} {machine} {nodename}",
-                     sysname = x.sysname,
-                     version = x.version,
-                     release = x.release,
-                     machine = x.machine,
-                     nodename = x.nodename
-                ))
+                .map(|x| {
+                    format!(
+                        "{sysname} {version} {release} {machine} {nodename}",
+                        sysname = x.sysname,
+                        version = x.version,
+                        release = x.release,
+                        machine = x.machine,
+                        nodename = x.nodename
+                    )
+                })
                 .unwrap_or_else(|| "No uname provided".to_string()),
             hostname,
             graph_ref: format!("{graph_id}@{variant}"),
