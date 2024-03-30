@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.15](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.14...v3.2.15) - 2024-03-30
+
+### Fixed
+- fixing libflate bug
+- fixing windows bug
+- fixing bug
+- fixing for windows
+
+### Other
+- skipping uname call for windows too
+- different serde_json's
+- removing tracing-futures
+- formatting
+- using rust-protobuf
+- using protoc-bin-vendored
+- *(deps)* bump reqwest from 0.11.24 to 0.11.25
+
 ## [3.2.14](https://github.com/async-graphql/async_graphql_apollo_studio_extension/compare/v3.2.13...v3.2.14) - 2024-03-07
 
 ### Fixed

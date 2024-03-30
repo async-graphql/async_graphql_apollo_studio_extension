@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-extension-apollo-tracing"
-version = "3.2.14"
+version = "3.2.15"
 dependencies = [
  "anyhow",
  "async-graphql",
