@@ -25,7 +25,7 @@ cfg-if = "1"
 derive_builder = "0.13"
 futures = "0.3"
 futures-locks = "0.7"
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 sha2 = "0.10"
 serde-json-wasm = "1.0.1"
 tracing = "0.1"
@@ -48,7 +48,7 @@ uname = "0.1.1"
 protobuf-codegen = "3.4.0"
 async-std = { version = "1", default-features = false, features = ["default", "tokio1"] }
 cfg-if = "1.0.0"
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 prost-build = "0.12.3"
 protox = "0.6.0"
 tonic-build = "0.10"
