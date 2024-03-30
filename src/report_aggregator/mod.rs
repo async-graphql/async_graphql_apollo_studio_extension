@@ -4,17 +4,18 @@ use futures::{
     channel::mpsc::{self, Sender},
     StreamExt,
 };
-use tokio::time::Instant;
+use protobuf::Message;
 
 use crate::{
-    packages::uname::Uname,
-    proto::report::{Report, ReportHeader, Trace, TracesAndStats},
-    runtime::{spawn, JoinHandle},
+    proto::reports::{Report, ReportHeader, Trace, TracesAndStats},
+    packages::uname,
+    runtime::{abort, spawn, Instant, JoinHandle},
 };
 
 /// The [ReportAggregator] is the structure which control the background task spawned to aggregate
 /// and send data through Apollo Studio by constructing [Report] ready to be send
 pub struct ReportAggregator {
+    #[allow(dead_code)]
     handle: JoinHandle<()>,
     sender: Sender<(String, Trace)>,
 }
@@ -36,9 +37,8 @@ impl ReportAggregator {
         let (tx, mut rx) = mpsc::channel::<(String, Trace)>(BUFFER_SLOTS);
 
         let reported_header = ReportHeader {
-            uname: Uname::new()
+            uname: uname::uname()
                 .ok()
-                .map(|x| x.to_string())
                 .unwrap_or_else(|| "No uname provided".to_string()),
             hostname,
             graph_ref: format!("{graph_id}@{variant}"),
@@ -46,6 +46,7 @@ impl ReportAggregator {
             agent_version: format!("async-studio-extension-{}", VERSION),
             runtime_version: "Rust".to_string(),
             executable_schema_id: graph_id,
+            special_fields: Default::default(),
         };
 
         let handle = spawn(async move {
@@ -92,11 +93,11 @@ impl ReportAggregator {
                     let report: Report = Report {
                         traces_pre_aggregated: false,
                         traces_per_query: hashmap_to_send,
-                        header: Some(reported_header.clone()),
+                        header: Some(reported_header.clone()).into(),
                         ..Default::default()
                     };
 
-                    let msg = prost::Message::encode_to_vec(&report);
+                    let msg = report.write_to_bytes().unwrap();
 
                     let mut client = client
                         .post(REPORTING_URL)
@@ -143,7 +144,7 @@ impl ReportAggregator {
 
 impl Drop for ReportAggregator {
     fn drop(&mut self) {
-        self.handle.abort();
+        abort(&self.handle);
         // TODO: Wait for the proper aborted task
     }
 }

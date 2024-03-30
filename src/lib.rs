@@ -26,23 +26,25 @@
 //!
 //! * `compression` - To enable GZIP Compression when sending traces to Apollo Studio.
 mod compression;
-mod packages;
 mod proto;
 pub mod register;
 mod report_aggregator;
 
 mod runtime;
+mod packages;
+
 use futures::SinkExt;
-use prost_types::Timestamp;
+use protobuf::{well_known_types::timestamp::Timestamp, EnumOrUnknown, MessageField};
 use report_aggregator::ReportAggregator;
 use runtime::spawn;
+use packages::serde_json;
 
 #[macro_use]
 extern crate tracing;
 
-use futures_locks::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::RwLock;
 
 use async_graphql::QueryPathSegment;
 use chrono::{DateTime, Utc};
@@ -55,13 +57,13 @@ use async_graphql::extensions::{
 };
 use async_graphql::parser::types::{ExecutableDocument, OperationType, Selection};
 use async_graphql::{Response, ServerResult, Value, Variables};
-use proto::report::{
+use proto::reports::{
     trace::{self, node, Node},
     Trace,
 };
 use std::convert::TryInto;
 
-pub use proto::report::trace::http::Method;
+pub use proto::reports::trace::http::Method;
 
 /// Apollo Tracing Extension to send traces to Apollo Studio
 /// The extension to include to your `async_graphql` instance to connect with Apollo Studio.
@@ -185,7 +187,7 @@ impl Extension for ApolloTracingExtension {
             .any(|(_, operation)| operation.node.selection_set.node.items.iter().any(|selection| matches!(&selection.node, Selection::Field(field) if field.node.name.node == "__schema")));
         if !is_schema {
             let result: String =
-                ctx.stringify_execute_doc(&document, &Variables::from_json(serde_json::json!({})));
+                ctx.stringify_execute_doc(&document, &Variables::from_json(serde_json::from_str("{}").unwrap()));
             let name = document
                 .operations
                 .iter()
@@ -194,7 +196,7 @@ impl Extension for ApolloTracingExtension {
                 .map(|x| x.as_str())
                 .unwrap_or("no_name");
             let query_type = format!("# {name}\n {query}", name = name, query = result);
-            *self.operation_name.write().await = query_type;
+            *self.operation_name.write().unwrap() = query_type;
         }
         Ok(document)
     }
@@ -227,7 +229,9 @@ impl Extension for ApolloTracingExtension {
         let client_version = tracing_extension
             .client_version
             .unwrap_or_else(|| "no client version".to_string());
-        let method = tracing_extension.method.unwrap_or(Method::Unknown);
+        let method = tracing_extension
+            .method
+            .or(<Method as protobuf::Enum>::from_str("UNKNOWN"));
         let status_code = tracing_extension.status_code.unwrap_or(0);
 
         let mut trace: Trace = Trace {
@@ -245,34 +249,39 @@ impl Extension for ApolloTracingExtension {
                 .map(|x| x.to_string())
                 .unwrap_or_else(|| "no operation".to_string()),
             ..Default::default()
-        });
+        })
+        .into();
 
-        trace.http = Some(trace::Http {
-            method: method.into(),
+        trace.http = Some(trace::HTTP {
+            method: EnumOrUnknown::new(method.unwrap()),
             status_code,
             ..Default::default()
-        });
+        })
+        .into();
 
-        trace.end_time = Some(Timestamp {
+        trace.end_time = MessageField::some(Timestamp {
             nanos: inner.end_time.timestamp_subsec_nanos().try_into().unwrap(),
             seconds: inner.end_time.timestamp(),
+            special_fields: Default::default(),
         });
 
-        trace.start_time = Some(Timestamp {
-            nanos: inner
-                .start_time
-                .timestamp_subsec_nanos()
-                .try_into()
-                .unwrap(),
-            seconds: inner.start_time.timestamp(),
-        });
+        trace.start_time =
+            protobuf::MessageField::some(protobuf::well_known_types::timestamp::Timestamp {
+                nanos: inner
+                    .start_time
+                    .timestamp_subsec_nanos()
+                    .try_into()
+                    .unwrap(),
+                seconds: inner.start_time.timestamp(),
+                special_fields: Default::default(),
+            });
 
-        let root_node = self.root_node.read().await;
-        trace.root = Some(root_node.clone());
+        let root_node = self.root_node.read().unwrap();
+        trace.root = Some(root_node.clone()).into();
 
         let mut sender = self.report.sender();
 
-        let operation_name = self.operation_name.read().await.clone();
+        let operation_name = self.operation_name.read().unwrap().clone();
 
         let _handle = spawn(async move {
             if let Err(e) = sender.send((operation_name, trace)).await {
@@ -295,7 +304,7 @@ impl Extension for ApolloTracingExtension {
         let path = info.path_node.to_string_vec().join(".");
         let field_name = info.path_node.field_name().to_string();
         let parent_type = info.parent_type.to_string();
-        let return_type = info.return_type.to_string();
+        let _return_type = info.return_type.to_string();
         let start_time = Utc::now() - self.inner.lock().await.start_time;
         let path_node = info.path_node;
 
@@ -320,12 +329,11 @@ impl Extension for ApolloTracingExtension {
             },
             parent_type: parent_type.to_string(),
             original_field_name: field_name,
-            r#type: return_type,
             ..Default::default()
         };
 
         let node = Arc::new(RwLock::new(node));
-        self.nodes.write().await.insert(path, node.clone());
+        self.nodes.write().unwrap().insert(path, node.clone());
         let parent_node = path_node.parent.map(|x| x.to_string_vec().join("."));
         // Use the path to create a new node
         // https://github.com/apollographql/apollo-server/blob/291c17e255122d4733b23177500188d68fac55ce/packages/apollo-server-core/src/plugin/traceTreeBuilder.ts
@@ -334,7 +342,7 @@ impl Extension for ApolloTracingExtension {
             Err(e) => {
                 let json = match serde_json::to_string(&e) {
                     Ok(content) => content,
-                    Err(e) => serde_json::json!({ "error": format!("{:?}", e) }).to_string(),
+                    Err(e) => format!("{{ \"error\": \"{e:?}\" }}"),
                 };
                 let error = trace::Error {
                     message: e.message.clone(),
@@ -345,19 +353,20 @@ impl Extension for ApolloTracingExtension {
                         .map(|x| trace::Location {
                             line: x.line as u32,
                             column: x.column as u32,
+                            special_fields: protobuf::SpecialFields::default(),
                         })
                         .collect(),
                     json,
                     ..Default::default()
                 };
 
-                node.write().await.error = vec![error];
+                node.write().unwrap().error = vec![error];
                 Err(e)
             }
         };
         let end_time = Utc::now() - self.inner.lock().await.start_time;
 
-        node.write().await.end_time = match end_time
+        node.write().unwrap().end_time = match end_time
             .num_nanoseconds()
             .and_then(|x| u64::try_from(x).ok())
         {
@@ -371,19 +380,19 @@ impl Extension for ApolloTracingExtension {
 
         match parent_node {
             None => {
-                let mut root_node = self.root_node.write().await;
+                let mut root_node = self.root_node.write().unwrap();
                 let child = &mut root_node.child;
-                let node = node.read().await;
+                let node = node.read().unwrap();
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
                 child.push(node.clone());
             }
             Some(parent) => {
-                let nodes = self.nodes.read().await;
+                let nodes = self.nodes.read().unwrap();
                 let node_read = nodes.get(&parent).unwrap();
-                let mut parent = node_read.write().await;
+                let mut parent = node_read.write().unwrap();
                 let child = &mut parent.child;
-                let node = node.read().await;
+                let node = node.read().unwrap();
                 // Can't copy or pass a ref to Protobuf
                 // So we clone
                 child.push(node.clone());
