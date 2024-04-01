@@ -29,7 +29,7 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 sha2 = "0.10"
 serde-json-wasm = "1.0.1"
 tracing = "0.1"
-uuid = { version = "1.7", features = ["v4", "js"] }                  # A library to generate and parse UUIDs.
+uuid = { version = "1.8", features = ["v4", "js"] }                  # A library to generate and parse UUIDs.
 wasm-bindgen-futures = "0.4.18"
 protobuf = "3.4.0"
 
